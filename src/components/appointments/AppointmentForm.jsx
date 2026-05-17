@@ -1,16 +1,13 @@
 import React, { useState } from 'react';
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { useWorkspaceEntities } from '@/lib/useWorkspaceEntities';
-import { useWorkspace } from '@/lib/useWorkspace';
+import { useAppointmentServiceMutations } from '@/hooks/services/useAppointmentServiceMutations';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Save, CheckCircle2, AlertTriangle } from 'lucide-react';
 import StepStart from './steps/StepStart';
 import StepPhotos from './steps/StepPhotos';
 import StepReport from './steps/StepReport';
 import StepClose from './steps/StepClose';
-import { appointmentService } from '@/services/appointmentService';
-import { invalidateGroup } from '@/services/serviceUtils';
 
 const STEPS = [
   { id: 'start',  label: 'Início',   emoji: '🌅' },
@@ -39,24 +36,22 @@ const DEFAULT = {
 };
 
 export default function AppointmentForm({ appointment, onSaved, onCancel }) {
-  const qc = useQueryClient();
-  const db = useWorkspaceEntities();
-  const { workspaceId } = useWorkspace();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState(appointment ? { ...appointment } : { ...DEFAULT });
   const [error, setError] = useState(null);
 
   const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me(), staleTime: Infinity });
+  const { saveAppointment } = useAppointmentServiceMutations({ user });
 
   const patch = updates => setForm(f => ({ ...f, ...updates }));
 
-  const saveMut = useMutation({
-    mutationFn: ({ data, isDraft }) => appointmentService.saveAppointment(db, { data, isDraft, user }),
-    onSuccess: () => { invalidateGroup(qc, workspaceId, 'appointments'); onSaved(); },
-    onError: e => setError(e.message),
-  });
-
-  const handleSave = (isDraft = true) => { setError(null); saveMut.mutate({ data: form, isDraft }); };
+  const handleSave = (isDraft = true) => {
+    setError(null);
+    saveAppointment.mutate({ data: form, isDraft }, {
+      onSuccess: onSaved,
+      onError: (_, message) => setError(message),
+    });
+  };
 
   const isLocked = form.locked || form.approval_status === 'approved';
 
@@ -105,12 +100,12 @@ export default function AppointmentForm({ appointment, onSaved, onCancel }) {
           <Button variant="outline" onClick={onCancel}>Cancelar</Button>
         </div>
         <div className="flex gap-2">
-          {!isLocked && <Button variant="secondary" onClick={() => handleSave(true)} disabled={saveMut.isPending}><Save className="w-4 h-4 mr-1.5" /> Rascunho</Button>}
+          {!isLocked && <Button variant="secondary" onClick={() => handleSave(true)} disabled={saveAppointment.isPending}><Save className="w-4 h-4 mr-1.5" /> Rascunho</Button>}
           {step < STEPS.length - 1
             ? <Button onClick={() => setStep(s => s + 1)} className="gap-1.5">Próximo <ChevronRight className="w-4 h-4" /></Button>
-            : !isLocked && <Button onClick={() => handleSave(false)} disabled={saveMut.isPending}
+            : !isLocked && <Button onClick={() => handleSave(false)} disabled={saveAppointment.isPending}
                 style={{ background: 'linear-gradient(135deg,#00D99A,#14B8D4)', color: '#020B0F', fontWeight: 700 }}>
-                {saveMut.isPending ? 'Salvando...' : '🔒 Finalizar Apontamento'}
+                {saveAppointment.isPending ? 'Salvando...' : '🔒 Finalizar Apontamento'}
               </Button>
           }
         </div>

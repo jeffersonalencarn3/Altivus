@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useEmployees } from '@/lib/useAppData';
 import { useWorkspaceEntities } from '@/lib/useWorkspaceEntities';
 import { useWorkspace } from '@/lib/useWorkspace';
+import { useActivityServiceMutations } from '@/hooks/services/useActivityServiceMutations';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { UserPlus, Trash2, Clock, Crown, Wrench, HandHelping } from 'lucide-react';
-import { activityService } from '@/services/activityService';
-import { invalidateGroup } from '@/services/serviceUtils';
 
 const ROLE_CONFIG = {
   lider:    { label: 'Líder',    icon: Crown,       cls: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/30' },
@@ -18,9 +17,9 @@ const ROLE_CONFIG = {
 };
 
 export default function ActivityTeamPanel({ activityId, hoursPlanned = 0 }) {
-  const qc = useQueryClient();
   const db = useWorkspaceEntities();
   const { workspaceId } = useWorkspace();
+  const { assignEmployee, removeEmployeeAssignment, updateEmployeeHours } = useActivityServiceMutations();
   const { data: employees = [] } = useEmployees();
 
   const { data: assignments = [] } = useQuery({
@@ -35,30 +34,6 @@ export default function ActivityTeamPanel({ activityId, hoursPlanned = 0 }) {
 
   const assignedIds = new Set(assignments.map(a => a.employee_id));
   const availableEmployees = employees.filter(e => !assignedIds.has(e.id) && e.status === 'active');
-
-  const addMut = useMutation({
-    mutationFn: () => activityService.assignEmployee(db, {
-      activityId,
-      employeeId: selectedEmployee,
-      role: selectedRole,
-    }),
-    onSuccess: () => {
-      invalidateGroup(qc, workspaceId, 'activities');
-      setSelectedEmployee('');
-    },
-  });
-
-  const removeMut = useMutation({
-    mutationFn: (id) => activityService.removeEmployeeAssignment(db, id),
-    onSuccess: () => {
-      invalidateGroup(qc, workspaceId, 'activities');
-    },
-  });
-
-  const updateHoursMut = useMutation({
-    mutationFn: ({ id, hours }) => activityService.updateEmployeeHours(db, { id, hours }),
-    onSuccess: () => invalidateGroup(qc, workspaceId, 'activities'),
-  });
 
   const totalHours = assignments.reduce((s, a) => s + (a.hours_worked || 0), 0);
 
@@ -92,7 +67,7 @@ export default function ActivityTeamPanel({ activityId, hoursPlanned = 0 }) {
         <Button
           size="sm" className="h-9 shrink-0"
           disabled={!selectedEmployee}
-          onClick={() => addMut.mutate()}
+          onClick={() => assignEmployee.mutate({ activityId, employeeId: selectedEmployee, role: selectedRole }, { onSuccess: () => setSelectedEmployee('') })}
         >
           <UserPlus className="w-4 h-4 mr-1" /> Adicionar
         </Button>
@@ -148,7 +123,7 @@ export default function ActivityTeamPanel({ activityId, hoursPlanned = 0 }) {
                   <Input
                     type="number" min="0" step="0.5"
                     value={a.hours_worked || 0}
-                    onChange={e => updateHoursMut.mutate({ id: a.id, hours: Number(e.target.value) })}
+                    onChange={e => updateEmployeeHours.mutate({ id: a.id, hours: Number(e.target.value) })}
                     className="w-20 h-7 text-xs text-center"
                   />
                   <span className="text-xs text-muted-foreground">h</span>
@@ -160,7 +135,7 @@ export default function ActivityTeamPanel({ activityId, hoursPlanned = 0 }) {
                   </span>
                 )}
 
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => removeMut.mutate(a.id)}>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => removeEmployeeAssignment.mutate(a.id)}>
                   <Trash2 className="w-3 h-3" />
                 </Button>
               </div>

@@ -1,5 +1,8 @@
 import { runService } from '@/services/serviceUtils';
+import { buildOperationalAnalyticsMeta } from '@/services/serviceLayer';
 import { OPERATIONAL_LOG_CATEGORIES, OPERATIONAL_LOG_EVENTS } from '@/services/operationalLogEvents';
+
+export const OPERATIONAL_LOG_SERVICE_DOMAIN = 'operational_log';
 
 const DEFAULT_LIMIT = 200;
 
@@ -128,6 +131,16 @@ function groupBy(logs, getKey) {
 
 async function writeLog(db, event, { required = false } = {}) {
   const payload = normalizeLog(event);
+  payload.metadata = {
+    ...(payload.metadata || {}),
+    analytics: buildOperationalAnalyticsMeta({
+      domain: event.category || OPERATIONAL_LOG_SERVICE_DOMAIN,
+      operation: payload.event_type,
+      workspaceId: payload.workspace_id,
+      entityType: payload.entity_type,
+      entityId: payload.entity_id,
+    }),
+  };
   try {
     return await db.OperationalLog.create(payload);
   } catch (error) {

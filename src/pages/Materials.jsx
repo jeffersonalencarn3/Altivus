@@ -1,8 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useMaterials, useAllActivityMaterials, useTeams, useActivities } from '@/lib/useAppData';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useWorkspaceEntities } from '@/lib/useWorkspaceEntities';
-import { useWorkspace } from '@/lib/useWorkspace';
+import { useMaterialServiceMutations } from '@/hooks/services/useMaterialServiceMutations';
 import PageHeader from '@/components/shared/PageHeader';
 import StockKPIs from '@/components/materials/StockKPIs';
 import ConsumptionCharts from '@/components/materials/ConsumptionCharts';
@@ -15,8 +13,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Plus, AlertTriangle, Filter, X, Lock } from 'lucide-react';
 import { usePermissions } from '@/lib/usePermissions';
-import { materialService } from '@/services/materialService';
-import { invalidateGroup } from '@/services/serviceUtils';
 
 const EMPTY = { name: '', type: 'epi', quantity_available: 0, unit: 'un', low_stock_threshold: 5 };
 
@@ -26,9 +22,7 @@ export default function Materials() {
   const { data: allActivityMaterials = [] } = useAllActivityMaterials();
   const { data: teams = [] } = useTeams();
   const { data: activities = [] } = useActivities();
-  const db = useWorkspaceEntities();
-  const { workspaceId } = useWorkspace();
-  const qc = useQueryClient();
+  const { createMaterial, updateMaterial, deleteMaterial } = useMaterialServiceMutations();
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(EMPTY);
@@ -40,22 +34,12 @@ export default function Materials() {
   const upd = (k, v) => setForm(p => ({ ...p, [k]: v }));
   const close = () => { setOpen(false); setEditId(null); setForm(EMPTY); };
 
-  const createMut = useMutation({
-    mutationFn: d => materialService.createMaterial(db, d, { canManageMaterials }),
-    onSuccess: () => { invalidateGroup(qc, workspaceId, 'materials'); close(); },
-  });
-  const updateMut = useMutation({
-    mutationFn: ({ id, data }) => materialService.updateMaterial(db, id, data, { canManageMaterials }),
-    onSuccess: () => { invalidateGroup(qc, workspaceId, 'materials'); close(); },
-  });
-  const deleteMut = useMutation({
-    mutationFn: id => materialService.deleteMaterial(db, id, { canManageMaterials }),
-    onSuccess: () => invalidateGroup(qc, workspaceId, 'materials'),
-  });
-
   const handleSave = () => {
-    if (editId) updateMut.mutate({ id: editId, data: form });
-    else createMut.mutate(form);
+    if (editId) {
+      updateMaterial.mutate({ id: editId, data: form }, { onSuccess: close });
+    } else {
+      createMaterial.mutate({ data: form }, { onSuccess: close });
+    }
   };
 
   const openEdit = (m) => {
@@ -157,7 +141,7 @@ export default function Materials() {
             materials={filteredMaterials}
             activityMaterials={filteredActivityMaterials}
             onEdit={canManageMaterials ? openEdit : null}
-            onDelete={canManageMaterials ? (id) => deleteMut.mutate(id) : null}
+            onDelete={canManageMaterials ? (id) => deleteMaterial.mutate({ id }) : null}
           />
         </TabsContent>
       </Tabs>

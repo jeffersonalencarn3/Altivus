@@ -1,6 +1,8 @@
 import { runService } from '@/services/serviceUtils';
 import { operationalLogService } from '@/services/operationalLogService';
 
+export const APPOINTMENT_SERVICE_DOMAIN = 'appointment';
+
 export const appointmentService = {
   saveAppointment(db, { data, isDraft = true, user }) {
     return runService(async () => {

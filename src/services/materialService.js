@@ -1,6 +1,8 @@
 import { ensureAllowed, runService } from '@/services/serviceUtils';
 import { operationalLogService } from '@/services/operationalLogService';
 
+export const MATERIAL_SERVICE_DOMAIN = 'material';
+
 function nextQuantity(current, delta) {
   return Math.max(0, (current || 0) + delta);
 }

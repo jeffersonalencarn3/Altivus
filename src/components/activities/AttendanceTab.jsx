@@ -6,8 +6,6 @@
  *   - Admin: pode editar qualquer campo, mas exige motivo + observação → gera audit_log com antes/depois
  */
 import React, { useState, useMemo, useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { useWorkspaceEntities } from '@/lib/useWorkspaceEntities';
 import { useWorkspace } from '@/lib/useWorkspace';
 import { useAttendanceRecords, useEmployees } from '@/lib/useAppData';
 import { base44 } from '@/api/base44Client';
@@ -21,8 +19,7 @@ import AddCollaboratorSheet from '@/components/activities/AddCollaboratorSheet';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { activityService } from '@/services/activityService';
-import { invalidateGroup } from '@/services/serviceUtils';
+import { useActivityServiceMutations } from '@/hooks/services/useActivityServiceMutations';
 
 /* ─── constantes ─── */
 const STATUS_CONFIG = {
@@ -332,8 +329,7 @@ function ActionModal({ open, onClose, record, activity, onSave, currentUser, isA
 /* ─── componente principal ─── */
 export default function AttendanceTab({ activity, teams = [] }) {
   const { workspaceId } = useWorkspace();
-  const db = useWorkspaceEntities();
-  const qc = useQueryClient();
+  const { loadTeamAttendance, saveAttendance } = useActivityServiceMutations({ activity });
   const { data: employees = [] } = useEmployees();
   const [currentUser, setCurrentUser] = useState(null);
   const [selectedRecord, setSelectedRecord] = useState(null);
@@ -361,23 +357,20 @@ export default function AttendanceTab({ activity, teams = [] }) {
     const existing  = new Set(todayRecs.map(r => r.employee_id));
     const missing   = teamEmployees.filter(e => !existing.has(e.id));
     if (!missing.length) { toast.info('Equipe já carregada para hoje'); return; }
-    await activityService.loadTeamAttendance(db, { workspaceId, activity, team, employees: missing, records, today });
-    invalidateGroup(qc, workspaceId, 'activities');
+    await loadTeamAttendance.mutateAsync({ workspaceId, team, employees: missing, records, today });
     toast.success(`${missing.length} colaborador(es) carregado(s)`);
   };
 
   /* Salva registro e grava evento no audit_trail da atividade */
   const handleSave = async (recordId, payload, oldRecord, finalStatus) => {
-    await activityService.saveAttendance(db, {
+    await saveAttendance.mutateAsync({
       workspaceId,
-      activity,
       recordId,
       payload,
       oldRecord,
       finalStatus,
       currentUser,
     });
-    invalidateGroup(qc, workspaceId, 'activities');
     toast.success('Presença registrada!');
   };
 

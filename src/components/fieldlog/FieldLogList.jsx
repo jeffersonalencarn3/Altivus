@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useWorkspaceEntities } from '@/lib/useWorkspaceEntities';
 import { useWorkspace } from '@/lib/useWorkspace';
 import { Button } from '@/components/ui/button';
 import { Edit2, Trash2, Lock, CheckCircle2, Clock, AlertTriangle, CloudRain, Sun, Wind, Cloud } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { fieldLogService } from '@/services/fieldLogService';
-import { invalidateGroup } from '@/services/serviceUtils';
+import { useFieldLogServiceMutations } from '@/hooks/services/useFieldLogServiceMutations';
 
 const STATUS_CONFIG = {
   draft:    { label: 'Rascunho',  color: '#718096', bg: 'rgba(113,128,150,0.12)', border: 'rgba(113,128,150,0.25)' },
@@ -27,9 +26,9 @@ const WEATHER_ICON = {
 const WEATHER_LABEL = { sunny: 'Ensolarado', cloudy: 'Nublado', windy: 'Ventoso', rain: 'Chuva', high_risk: 'Alto Risco' };
 
 export default function FieldLogList({ onEdit, onNew }) {
-  const qc = useQueryClient();
   const db = useWorkspaceEntities();
   const { workspaceId } = useWorkspace();
+  const { deleteFieldLog } = useFieldLogServiceMutations();
   const [filter, setFilter] = useState('all');
 
   const { data: logs = [], isLoading } = useQuery({
@@ -48,11 +47,6 @@ export default function FieldLogList({ onEdit, onNew }) {
     queryKey: ['teams', workspaceId],
     queryFn: () => db.Team.list(),
     enabled: !!workspaceId,
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (id) => fieldLogService.deleteFieldLog(db, id),
-    onSuccess: () => invalidateGroup(qc, workspaceId, 'fieldLogs'),
   });
 
   const contractMap = Object.fromEntries(contracts.map(c => [c.id, c.name]));
@@ -214,7 +208,7 @@ export default function FieldLogList({ onEdit, onNew }) {
                       <Button
                         size="icon"
                         variant="ghost"
-                        onClick={() => { if (confirm('Excluir diário?')) deleteMutation.mutate(log.id); }}
+                        onClick={() => { if (confirm('Excluir diário?')) deleteFieldLog.mutate({ id: log.id }); }}
                         className="w-8 h-8 text-red-400 hover:text-red-300"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
