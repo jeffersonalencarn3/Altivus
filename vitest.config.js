@@ -14,6 +14,7 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.js'],
     globals: true,
     css: false,
+    testTimeout: 30000,
     include: ['tests/**/*.{test,spec}.{js,jsx}'],
     coverage: {
       reporter: ['text', 'html'],

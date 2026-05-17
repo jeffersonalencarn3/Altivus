@@ -1,6 +1,9 @@
 import { runService } from '@/services/serviceUtils';
+import { OPERATIONAL_LOG_CATEGORIES, OPERATIONAL_LOG_EVENTS } from '@/services/operationalLogEvents';
 
 const DEFAULT_LIMIT = 200;
+
+export { OPERATIONAL_LOG_EVENTS, OPERATIONAL_LOG_CATEGORIES };
 
 function normalizeUser(user = {}) {
   return {
@@ -27,7 +30,7 @@ function normalizeLog(event = {}) {
 
   return {
     workspace_id: pickWorkspaceId(event),
-    event_type: event.event_type || event.eventType || event.type || 'system.event',
+    event_type: event.event_type || event.eventType || event.type || OPERATIONAL_LOG_EVENTS.SYSTEM_EVENT,
     category: event.category || 'system',
     severity: event.severity || 'info',
     action: event.action || event.event_type || event.eventType || event.type || 'event',
@@ -145,13 +148,130 @@ export const operationalLogService = {
     return Promise.all(events.map(event => writeLog(db, event, options)));
   },
 
+  recordWorkspaceSwitch(db, { workspaceId, previousWorkspaceId, user }) {
+    if (!workspaceId || !previousWorkspaceId || workspaceId === previousWorkspaceId) {
+      return Promise.resolve(null);
+    }
+    return writeLog(db, {
+      workspace_id: workspaceId,
+      event_type: OPERATIONAL_LOG_EVENTS.WORKSPACE_SWITCH,
+      category: OPERATIONAL_LOG_CATEGORIES.WORKSPACE,
+      action: 'switch_workspace',
+      severity: 'info',
+      description: 'Workspace ativo alterado',
+      entity_type: 'Workspace',
+      entity_id: workspaceId,
+      user,
+      before: { workspace_id: previousWorkspaceId },
+      after: { workspace_id: workspaceId },
+      source: 'web',
+      analytics_tags: ['workspace', 'multi_tenant'],
+    });
+  },
+
+  recordActivityExecution(db, {
+    workspaceId,
+    activity,
+    session,
+    user,
+    phase,
+    metadata = {},
+    before,
+    after,
+  }) {
+    const activityId = activity?.id || '';
+    const teamId = activity?.team_id || '';
+    const contractId = activity?.contract_id || '';
+    const wsId = workspaceId || activity?.workspace_id || '';
+    const sessionId = session?.id || '';
+
+    const phases = {
+      start: {
+        event_type: OPERATIONAL_LOG_EVENTS.ACTIVITY_START,
+        action: 'start_activity',
+        description: `Atividade iniciada: ${activity?.title || activityId}`,
+        entity_type: 'Activity',
+        entity_id: activityId,
+        analytics_tags: ['activity', 'execution', 'sla'],
+      },
+      finish: {
+        event_type: OPERATIONAL_LOG_EVENTS.ACTIVITY_FINISH,
+        action: 'finish_activity',
+        description: `Atividade finalizada: ${activity?.title || activityId}`,
+        entity_type: 'Activity',
+        entity_id: activityId,
+        analytics_tags: ['activity', 'execution', 'sla'],
+      },
+      checkin: {
+        event_type: OPERATIONAL_LOG_EVENTS.ACTIVITY_CHECKIN,
+        action: 'checkin_activity',
+        description: `Check-in realizado: ${activity?.title || activityId}`,
+        entity_type: 'ActivitySession',
+        entity_id: sessionId,
+        analytics_tags: ['activity', 'execution', 'sla'],
+      },
+      checkout: {
+        event_type: OPERATIONAL_LOG_EVENTS.ACTIVITY_CHECKOUT,
+        action: 'checkout_activity',
+        description: `Check-out realizado: ${activity?.title || activityId}`,
+        entity_type: 'ActivitySession',
+        entity_id: sessionId,
+        analytics_tags: ['activity', 'execution', 'sla'],
+      },
+    };
+
+    const config = phases[phase];
+    if (!config) return Promise.resolve(null);
+
+    return writeLog(db, {
+      workspace_id: wsId,
+      source: 'service',
+      category: OPERATIONAL_LOG_CATEGORIES.ACTIVITY,
+      activity_id: activityId,
+      team_id: teamId,
+      contract_id: contractId,
+      user,
+      metadata,
+      before: before || {},
+      after: after || (phase === 'checkin' ? session : {}),
+      ...config,
+    });
+  },
+
+  recordInventoryExit(db, event) {
+    return writeLog(db, {
+      source: 'service',
+      category: OPERATIONAL_LOG_CATEGORIES.INVENTORY,
+      event_type: OPERATIONAL_LOG_EVENTS.MATERIAL_STOCK_EXIT,
+      action: 'consume_material',
+      severity: 'info',
+      analytics_tags: ['inventory', 'stock', 'audit'],
+      ...event,
+    });
+  },
+
+  recordApproval(db, event) {
+    const decision = event.decision || event.action || 'pending';
+    return writeLog(db, {
+      source: 'service',
+      category: OPERATIONAL_LOG_CATEGORIES.APPROVAL,
+      action: decision,
+      severity: decision === 'approved' ? 'info' : 'warning',
+      analytics_tags: ['approval', 'audit'],
+      ...event,
+    });
+  },
+
   recordWorkspaceAccessRestriction(db, { workspace, user, status }) {
     const workspaceId = workspace?.id || workspace?.workspace_id || '';
     const normalizedStatus = status === 'blocked' ? 'blocked' : 'expired';
+    const eventType = normalizedStatus === 'blocked'
+      ? OPERATIONAL_LOG_EVENTS.WORKSPACE_BLOCKED
+      : OPERATIONAL_LOG_EVENTS.WORKSPACE_EXPIRED;
     return writeLog(db, {
       workspace_id: workspaceId,
-      event_type: `workspace.${normalizedStatus}`,
-      category: 'security',
+      event_type: eventType,
+      category: OPERATIONAL_LOG_CATEGORIES.SECURITY,
       severity: normalizedStatus === 'blocked' ? 'critical' : 'warning',
       action: normalizedStatus === 'blocked' ? 'block_workspace_access' : 'expire_workspace_access',
       description: normalizedStatus === 'blocked'
