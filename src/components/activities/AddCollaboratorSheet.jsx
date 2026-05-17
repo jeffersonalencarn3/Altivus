@@ -14,7 +14,7 @@ import {
   X, Search, UserPlus, UserMinus, AlertTriangle, Shield, Users, Filter,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { activityService } from '@/services/activityService';
+import { useActivityServiceMutations } from '@/hooks/services/useActivityServiceMutations';
 import { invalidateGroup } from '@/services/serviceUtils';
 
 /* ── Verifica se certificação está vencida/próx. vencer ── */
@@ -130,6 +130,7 @@ export default function AddCollaboratorSheet({ open, onClose, activity }) {
   const [filterTeam, setFilterTeam]   = useState('all');
   const [filterRole, setFilterRole]   = useState('all');
   const [loading, setLoading]         = useState(false);
+  const { addCollaborator, removeCollaborator } = useActivityServiceMutations({ activity, user: currentUser });
 
   useEffect(() => {
     base44.auth.me().then(u => setCurrentUser(u)).catch(() => {});
@@ -183,12 +184,11 @@ export default function AddCollaboratorSheet({ open, onClose, activity }) {
     setLoading(true);
     try {
       const team = allTeams.find(t => t.id === activity.team_id);
-      await activityService.addCollaborator(db, {
+      const today = new Date().toISOString().split('T')[0];
+      await addCollaborator.mutateAsync({
         workspaceId,
-        activity,
         employee: emp,
         team,
-        currentUser,
         today,
       });
       invalidateAll();
@@ -204,12 +204,7 @@ export default function AddCollaboratorSheet({ open, onClose, activity }) {
   const handleRemove = async (emp) => {
     setLoading(true);
     try {
-      await activityService.removeCollaborator(db, {
-        activity,
-        activityEmployees,
-        employee: emp,
-        currentUser,
-      });
+      await removeCollaborator.mutateAsync({ activityEmployees, employee: emp });
       invalidateAll();
       toast.success(`${emp.name} removido da atividade`);
     } catch {

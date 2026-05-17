@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useWorkspaceEntities } from '@/lib/useWorkspaceEntities';
 import { useWorkspace } from '@/lib/useWorkspace';
 import { useAuth } from '@/lib/AuthContext';
@@ -8,8 +8,7 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle2, XCircle, Lock, Clock, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { fieldLogService } from '@/services/fieldLogService';
-import { invalidateGroup } from '@/services/serviceUtils';
+import { useFieldLogServiceMutations } from '@/hooks/services/useFieldLogServiceMutations';
 
 const APPROVAL_CONFIG = {
   pending:  { label: 'Pendente',  color: '#E87D00', bg: 'rgba(232,125,0,0.10)',   icon: Clock },
@@ -18,11 +17,11 @@ const APPROVAL_CONFIG = {
 };
 
 export default function ApprovalPanel() {
-  const qc = useQueryClient();
   const db = useWorkspaceEntities();
   const { workspaceId } = useWorkspace();
   const { user } = useAuth();
   const { canApproveReport } = usePermissions();
+  const { approveFieldLog } = useFieldLogServiceMutations({ user });
   const [expanded, setExpanded] = useState(null);
   const [notes, setNotes] = useState({});
 
@@ -42,19 +41,6 @@ export default function ApprovalPanel() {
     queryKey: ['material_movements', workspaceId],
     queryFn: () => db.MaterialMovement.list('-created_date', 200),
     enabled: !!workspaceId,
-  });
-
-  const approveMutation = useMutation({
-    mutationFn: ({ log, decision }) => fieldLogService.approveFieldLog(db, {
-      log,
-      decision,
-      user,
-      notes: notes[log.id] || '',
-      movements,
-    }),
-    onSuccess: () => {
-      invalidateGroup(qc, workspaceId, 'fieldLogs');
-    },
   });
 
   const contractMap = Object.fromEntries(contracts.map(c => [c.id, c.name]));
@@ -206,16 +192,16 @@ export default function ApprovalPanel() {
                       <Button
                         className="flex-1 gap-1.5"
                         style={{ background: 'linear-gradient(135deg, #00D99A, #14B8D4)', color: '#020B0F', fontWeight: 700 }}
-                        onClick={() => approveMutation.mutate({ log, decision: 'approved' })}
-                        disabled={approveMutation.isPending}
+                        onClick={() => approveFieldLog.mutate({ log, decision: 'approved', notes: notes[log.id] || '', movements })}
+                        disabled={approveFieldLog.isPending}
                       >
                         <CheckCircle2 className="w-4 h-4" /> Aprovar
                       </Button>
                       <Button
                         variant="destructive"
                         className="flex-1 gap-1.5"
-                        onClick={() => approveMutation.mutate({ log, decision: 'rejected' })}
-                        disabled={approveMutation.isPending}
+                        onClick={() => approveFieldLog.mutate({ log, decision: 'rejected', notes: notes[log.id] || '', movements })}
+                        disabled={approveFieldLog.isPending}
                       >
                         <XCircle className="w-4 h-4" /> Reprovar
                       </Button>

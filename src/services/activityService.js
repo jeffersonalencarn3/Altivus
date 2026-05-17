@@ -1,7 +1,9 @@
+import { base44 } from '@/api/base44Client';
 import { calcularPlano } from '@/lib/planningEngine';
 import { ensureAllowed, runService } from '@/services/serviceUtils';
 import { materialService } from '@/services/materialService';
 import { operationalLogService } from '@/services/operationalLogService';
+export const ACTIVITY_SERVICE_DOMAIN = 'activity';
 
 function formatHour(iso) {
   return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -361,6 +363,16 @@ export const activityService = {
     return runService(() => db.ActivitySession.update(activeSession.id, {
       fotos_durante: [...(activeSession.fotos_durante || []), fileUrl],
     }), 'Erro ao adicionar foto');
+  },
+
+  uploadDuringPhoto(db, { activeSession, file, uploader }) {
+    return runService(async () => {
+      ensureAllowed(activeSession?.id, 'Sessão ativa não encontrada');
+      ensureAllowed(file, 'Arquivo inválido');
+      const upload = uploader || ((payload) => base44.integrations.Core.UploadFile(payload));
+      const { file_url } = await upload({ file });
+      return activityService.addDuringPhoto(db, { activeSession, fileUrl: file_url });
+    }, 'Erro ao enviar foto');
   },
 
   updatePlanningTeam(db, { activity, area, numAlpinistas }) {

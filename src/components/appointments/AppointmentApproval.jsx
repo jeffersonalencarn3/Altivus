@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useWorkspaceEntities } from '@/lib/useWorkspaceEntities';
 import { useWorkspace } from '@/lib/useWorkspace';
 import { useAuth } from '@/lib/AuthContext';
@@ -8,8 +8,7 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle2, XCircle, Lock, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { appointmentService } from '@/services/appointmentService';
-import { invalidateGroup } from '@/services/serviceUtils';
+import { useAppointmentServiceMutations } from '@/hooks/services/useAppointmentServiceMutations';
 
 const APPROVAL_CFG = {
   pending:  { label: 'Pendente',  color: '#E87D00', bg: 'rgba(232,125,0,0.10)',  icon: Clock },
@@ -18,25 +17,15 @@ const APPROVAL_CFG = {
 };
 
 export default function AppointmentApproval() {
-  const qc = useQueryClient();
   const db = useWorkspaceEntities();
   const { workspaceId } = useWorkspace();
   const { user } = useAuth();
   const { canApproveReport } = usePermissions();
+  const { approveAppointment } = useAppointmentServiceMutations({ user });
   const [expanded, setExpanded] = useState(null);
   const [notes, setNotes] = useState({});
 
   const { data: appts = [], isLoading } = useQuery({ queryKey: ['appointments', workspaceId], queryFn: () => db.Appointment.list('-date', 100), enabled: !!workspaceId });
-
-  const approveMut = useMutation({
-    mutationFn: ({ appt, decision }) => appointmentService.approveAppointment(db, {
-      appointment: appt,
-      decision,
-      user,
-      notes: notes[appt.id] || '',
-    }),
-    onSuccess: () => invalidateGroup(qc, workspaceId, 'appointments'),
-  });
 
   const relevant = appts.filter(a => a.status === 'awaiting_approval' || a.approval_status === 'approved' || a.approval_status === 'rejected');
 
@@ -135,11 +124,11 @@ export default function AppointmentApproval() {
                       value={notes[a.id] || ''} onChange={e => setNotes(n => ({ ...n, [a.id]: e.target.value }))} />
                     <div className="flex gap-2">
                       <Button className="flex-1 gap-1.5" style={{ background: 'linear-gradient(135deg,#00D99A,#14B8D4)', color: '#020B0F', fontWeight: 700 }}
-                        onClick={() => approveMut.mutate({ appt: a, decision: 'approved' })} disabled={approveMut.isPending}>
+                        onClick={() => approveAppointment.mutate({ appointment: a, decision: 'approved', notes: notes[a.id] || '' })} disabled={approveAppointment.isPending}>
                         <CheckCircle2 className="w-4 h-4" /> Aprovar
                       </Button>
                       <Button variant="destructive" className="flex-1 gap-1.5"
-                        onClick={() => approveMut.mutate({ appt: a, decision: 'rejected' })} disabled={approveMut.isPending}>
+                        onClick={() => approveAppointment.mutate({ appointment: a, decision: 'rejected', notes: notes[a.id] || '' })} disabled={approveAppointment.isPending}>
                         <XCircle className="w-4 h-4" /> Reprovar
                       </Button>
                     </div>

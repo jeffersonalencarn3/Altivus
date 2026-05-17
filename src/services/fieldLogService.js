@@ -2,6 +2,8 @@ import { runService } from '@/services/serviceUtils';
 import { materialService } from '@/services/materialService';
 import { operationalLogService } from '@/services/operationalLogService';
 
+export const FIELD_LOG_SERVICE_DOMAIN = 'field_log';
+
 function validateCloseRules(data, materials, contracts) {
   const contract = contracts.find(c => c.id === data.contract_id);
   const saldo = Math.max(0, (contract?.total_descidas_previstas || 0) - (contract?.total_descidas_executadas || 0));

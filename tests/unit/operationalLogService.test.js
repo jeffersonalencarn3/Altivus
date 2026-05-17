@@ -29,6 +29,28 @@ describe('operationalLogService', () => {
     }))
   })
 
+  it('anexa metadados de analytics ao persistir log', async () => {
+    const create = vi.fn(async payload => payload)
+    const db = { OperationalLog: { create } }
+
+    await operationalLogService.record(db, {
+      workspace_id: 'ws-alpha',
+      event_type: OPERATIONAL_LOG_EVENTS.ACTIVITY_START,
+      category: 'activity',
+      entity_type: 'Activity',
+      entity_id: 'act-1',
+    })
+
+    expect(create).toHaveBeenCalledWith(expect.objectContaining({
+      metadata: expect.objectContaining({
+        analytics: expect.objectContaining({
+          operation: OPERATIONAL_LOG_EVENTS.ACTIVITY_START,
+          workspace_id: 'ws-alpha',
+        }),
+      }),
+    }))
+  })
+
   it('nao quebra a operacao principal quando a escrita do log falha', async () => {
     const db = { OperationalLog: { create: vi.fn(async () => { throw new Error('offline') }) } }
 

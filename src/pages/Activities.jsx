@@ -1,8 +1,7 @@
 import React, { useState, useMemo, memo, useCallback, useEffect } from 'react';
-import { useQueryClient, useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useActivities, useTeams, useContracts, useActivitySessions } from '@/lib/useAppData';
 import { useWorkspace } from '@/lib/useWorkspace';
-import { useWorkspaceEntities } from '@/lib/useWorkspaceEntities';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,13 +17,12 @@ import EmptyState from '@/components/ui/EmptyState';
 import { Plus, Search, AlertTriangle, CheckCircle2, Clock, BarChart2, Filter, RefreshCw, Archive } from 'lucide-react';
 import { usePermissions } from '@/lib/usePermissions';
 import { toast } from 'sonner';
-import { activityService } from '@/services/activityService';
+import { useActivityServiceMutations } from '@/hooks/services/useActivityServiceMutations';
 import { invalidateGroup } from '@/services/serviceUtils';
 
 export default function Activities() {
   const qc = useQueryClient();
   const { workspaceId } = useWorkspace();
-  const db = useWorkspaceEntities();
   const { user } = useAuth();
   const { canCreateActivity, canEditActivity, canDeleteActivity } = usePermissions();
 
@@ -46,6 +44,15 @@ export default function Activities() {
   const [rescheduleModal, setRescheduleModal] = useState(null); // activity
   const [editActivity, setEditActivity]     = useState(null); // activity to edit
 
+  const {
+    createActivity,
+    archiveActivity,
+    restoreActivity,
+    rescheduleActivity,
+    duplicateActivity,
+    updateActivity,
+  } = useActivityServiceMutations({ activity: selectedAct, user });
+
   // Ao trocar de workspace, descarta qualquer atividade/modal do workspace anterior.
   // Isso evita que ações operacionais usem um activity_id antigo contra o novo cliente isolado.
   useEffect(() => {
@@ -54,76 +61,6 @@ export default function Activities() {
     setRescheduleModal(null);
     setEditActivity(null);
   }, [workspaceId]);
-
-  // ─── Mutations ──────────────────────────────────────────────────────────────
-
-  const createMutation = useMutation({
-    mutationFn: data => {
-      return activityService.createActivity(db, data, { canCreateActivity });
-    },
-    onSuccess: () => {
-      invalidateGroup(qc, workspaceId, 'activities');
-      setShowPlanner(false);
-      toast.success('Atividade criada com sucesso!');
-    },
-  });
-
-  const softDeleteMutation = useMutation({
-    mutationFn: ({ activity, mode, reason }) => activityService.archiveActivity(db, {
-      activity,
-      mode,
-      reason,
-      user,
-      canDeleteActivity,
-    }),
-    onSuccess: (_, { mode }) => {
-      invalidateGroup(qc, workspaceId, 'activities');
-      setDeleteModal(null);
-      toast.success(mode === 'delete' ? 'Atividade excluída (soft delete)' : 'Atividade arquivada');
-    },
-    onError: (err) => toast.error(err.message || 'Erro ao executar ação'),
-  });
-
-  const restoreMutation = useMutation({
-    mutationFn: (activity) => activityService.restoreActivity(db, {
-      activity,
-      user,
-      canDeleteActivity,
-    }),
-    onSuccess: () => {
-      invalidateGroup(qc, workspaceId, 'activities');
-      toast.success('Atividade restaurada');
-    },
-    onError: (err) => toast.error(err.message),
-  });
-
-  const rescheduleMutation = useMutation({
-    mutationFn: ({ activity, form }) => activityService.rescheduleActivity(db, {
-      activity,
-      form,
-      user,
-      canEditActivity,
-    }),
-    onSuccess: () => {
-      invalidateGroup(qc, workspaceId, 'activities');
-      setRescheduleModal(null);
-      toast.success('Atividade reprogramada');
-    },
-    onError: (err) => toast.error(err.message),
-  });
-
-  const duplicateMutation = useMutation({
-    mutationFn: (activity) => activityService.duplicateActivity(db, {
-      activity,
-      user,
-      canCreateActivity,
-    }),
-    onSuccess: () => {
-      invalidateGroup(qc, workspaceId, 'activities');
-      toast.success('Atividade duplicada!');
-    },
-    onError: (err) => toast.error(err.message),
-  });
 
   // ─── Filtros ─────────────────────────────────────────────────────────────────
 
@@ -310,11 +247,17 @@ export default function Activities() {
               teams={teams}
               onOpen={() => setSelectedAct(act)}
               onEdit={canEditActivity ? (a) => setEditActivity(a) : undefined}
-              onDuplicate={canCreateActivity ? (a) => duplicateMutation.mutate(a) : undefined}
+              onDuplicate={canCreateActivity ? (a) => duplicateActivity.mutate({ targetActivity: a }, {
+                onSuccess: () => toast.success('Atividade duplicada!'),
+                onError: (err) => toast.error(err.message),
+              }) : undefined}
               onReschedule={canEditActivity ? (a) => setRescheduleModal(a) : undefined}
               onArchive={canDeleteActivity ? (a) => setDeleteModal({ activity: a, mode: 'archive' }) : undefined}
               onDelete={canDeleteActivity ? (a) => setDeleteModal({ activity: a, mode: 'delete' }) : undefined}
-              onRestore={canDeleteActivity ? (a) => restoreMutation.mutate(a) : undefined}
+              onRestore={canDeleteActivity ? (a) => restoreActivity.mutate({ targetActivity: a }, {
+                onSuccess: () => toast.success('Atividade restaurada'),
+                onError: (err) => toast.error(err.message),
+              }) : undefined}
             />
           ))}
         </div>
@@ -325,7 +268,12 @@ export default function Activities() {
         <PlanningCalculator
           open={showPlanner}
           onClose={() => setShowPlanner(false)}
-          onSave={data => createMutation.mutate(data)}
+          onSave={data => createActivity.mutate({ data }, {
+            onSuccess: () => {
+              setShowPlanner(false);
+              toast.success('Atividade criada com sucesso!');
+            },
+          })}
           contracts={contracts}
           teams={teams}
         />
@@ -346,8 +294,18 @@ export default function Activities() {
         <ActivityDeleteModal
           activity={deleteModal.activity}
           mode={deleteModal.mode}
-          loading={softDeleteMutation.isPending}
-          onConfirm={(reason) => softDeleteMutation.mutate({ activity: deleteModal.activity, mode: deleteModal.mode, reason })}
+          loading={archiveActivity.isPending}
+          onConfirm={(reason) => archiveActivity.mutate({
+            targetActivity: deleteModal.activity,
+            mode: deleteModal.mode,
+            reason,
+          }, {
+            onSuccess: (_, { mode }) => {
+              setDeleteModal(null);
+              toast.success(mode === 'delete' ? 'Atividade excluída (soft delete)' : 'Atividade arquivada');
+            },
+            onError: (err) => toast.error(err.message || 'Erro ao executar ação'),
+          })}
           onCancel={() => setDeleteModal(null)}
         />
       )}
@@ -357,8 +315,14 @@ export default function Activities() {
         <ActivityRescheduleModal
           activity={rescheduleModal}
           teams={teams}
-          loading={rescheduleMutation.isPending}
-          onConfirm={(form) => rescheduleMutation.mutate({ activity: rescheduleModal, form })}
+          loading={rescheduleActivity.isPending}
+          onConfirm={(form) => rescheduleActivity.mutate({ targetActivity: rescheduleModal, form }, {
+            onSuccess: () => {
+              setRescheduleModal(null);
+              toast.success('Atividade reprogramada');
+            },
+            onError: (err) => toast.error(err.message),
+          })}
           onCancel={() => setRescheduleModal(null)}
         />
       )}
@@ -372,8 +336,7 @@ export default function Activities() {
           initialData={editActivity}
           onSave={async (data) => {
             try {
-              await activityService.updateActivity(db, editActivity.id, data, { canEditActivity });
-              invalidateGroup(qc, workspaceId, 'activities');
+              await updateActivity.mutateAsync({ id: editActivity.id, data });
               setEditActivity(null);
               toast.success('Atividade atualizada');
             } catch (err) {

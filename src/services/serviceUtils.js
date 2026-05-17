@@ -17,6 +17,10 @@ export function normalizeServiceError(error, fallback = 'Erro ao executar opera�
   return new ServiceError(error?.message || fallback, error);
 }
 
+export function getServiceErrorMessage(error, fallback = 'Erro ao executar operação') {
+  return normalizeServiceError(error, fallback).message;
+}
+
 export async function runService(operation, fallback) {
   try {
     return await operation();

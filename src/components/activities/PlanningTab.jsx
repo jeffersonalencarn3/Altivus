@@ -17,8 +17,7 @@ import {
 import { toast } from 'sonner';
 import { format, addBusinessDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { activityService } from '@/services/activityService';
-import { invalidateGroup } from '@/services/serviceUtils';
+import { useActivityServiceMutations } from '@/hooks/services/useActivityServiceMutations';
 
 export default function PlanningTab({ activity, sessions = [], teams = [], onRefresh }) {
   const { workspaceId } = useWorkspace();
@@ -28,6 +27,7 @@ export default function PlanningTab({ activity, sessions = [], teams = [], onRef
   const [editAlpinistas, setEditAlpinistas] = useState(false);
   const [newAlpinistas, setNewAlpinistas]   = useState(activity?.num_alpinistas || 1);
   const [saving, setSaving]                 = useState(false);
+  const { updatePlanningTeam } = useActivityServiceMutations({ activity });
 
   const previsao = calcularPrevisao(activity, sessions);
   const team     = teams.find(t => t.id === activity.team_id);
@@ -56,14 +56,12 @@ export default function PlanningTab({ activity, sessions = [], teams = [], onRef
   if (previsao.alpinistas_necessarios !== null && (activity.num_alpinistas || 1) < previsao.alpinistas_necessarios)
     eventos.push({ tipo: 'equipe', msg: `Equipe insuficiente — recomendado ${previsao.alpinistas_necessarios} alpinista(s) para cumprir o prazo.` });
 
-  /* ── Ajuste de alpinistas com recálculo automático ── */
   const handleUpdateAlpinistas = async () => {
     const n = Number(newAlpinistas);
     if (n < 1) return;
     setSaving(true);
     try {
-      await activityService.updatePlanningTeam(db, { activity, area, numAlpinistas: n });
-      invalidateGroup(qc, workspaceId, 'activities');
+      await updatePlanningTeam.mutateAsync({ area, numAlpinistas: n });
       toast.success('Equipe e prazo recalculados automaticamente');
       setEditAlpinistas(false);
       onRefresh?.();
