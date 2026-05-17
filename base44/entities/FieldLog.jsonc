@@ -1,0 +1,243 @@
+{
+  "name": "FieldLog",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "description": "ID do workspace (tenant)"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data do di\u00e1rio de campo"
+    },
+    "contract_id": {
+      "type": "string"
+    },
+    "activity_id": {
+      "type": "string"
+    },
+    "team_id": {
+      "type": "string"
+    },
+    "supervisor_id": {
+      "type": "string",
+      "description": "Email do supervisor"
+    },
+    "location": {
+      "type": "string",
+      "description": "Se\u00e7\u00e3o de fachada / localiza\u00e7\u00e3o"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "open",
+        "closed",
+        "approved"
+      ],
+      "default": "draft"
+    },
+    "start_time": {
+      "type": "string",
+      "description": "HH:mm"
+    },
+    "end_time": {
+      "type": "string",
+      "description": "HH:mm"
+    },
+    "weather": {
+      "type": "string",
+      "enum": [
+        "sunny",
+        "cloudy",
+        "windy",
+        "rain",
+        "high_risk"
+      ],
+      "description": "Condi\u00e7\u00e3o clim\u00e1tica"
+    },
+    "geolocation": {
+      "type": "string",
+      "description": "lat,lng"
+    },
+    "nr35_completed": {
+      "type": "boolean",
+      "default": false
+    },
+    "anchor_verified": {
+      "type": "boolean",
+      "default": false
+    },
+    "ppe_inspected": {
+      "type": "boolean",
+      "default": false
+    },
+    "supervisor_confirmed": {
+      "type": "boolean",
+      "default": false
+    },
+    "workers_present": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs dos colaboradores"
+    },
+    "sub_activities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "facade_section": {
+            "type": "string"
+          },
+          "completion_pct": {
+            "type": "number"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "risk_flagged": {
+            "type": "boolean"
+          },
+          "equipment": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "photos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "timestamp": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "descidas_realizadas": {
+      "type": "number",
+      "default": 0,
+      "description": "N\u00famero de descidas realizadas no dia"
+    },
+    "material_consumption": {
+      "type": "array",
+      "description": "Consumo de materiais registrado no fechamento",
+      "items": {
+        "type": "object",
+        "properties": {
+          "material_id": {
+            "type": "string"
+          },
+          "material_name": {
+            "type": "string"
+          },
+          "quantity_used": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "total_hours_team": {
+      "type": "number",
+      "default": 0
+    },
+    "productive_hours": {
+      "type": "number",
+      "default": 0
+    },
+    "idle_hours": {
+      "type": "number",
+      "default": 0
+    },
+    "weather_impact": {
+      "type": "boolean",
+      "default": false
+    },
+    "delay_occurred": {
+      "type": "boolean",
+      "default": false
+    },
+    "delay_reason": {
+      "type": "string"
+    },
+    "incident_occurred": {
+      "type": "boolean",
+      "default": false
+    },
+    "incident_description": {
+      "type": "string"
+    },
+    "supervisor_signature": {
+      "type": "string",
+      "description": "Base64 ou confirma\u00e7\u00e3o"
+    },
+    "client_signature": {
+      "type": "string"
+    },
+    "audit_trail": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string"
+          },
+          "user": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string"
+          },
+          "details": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "approval_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "default": "pending"
+    },
+    "approval_by": {
+      "type": "string",
+      "description": "Email do supervisor que aprovou/reprovou"
+    },
+    "approval_at": {
+      "type": "string",
+      "description": "Timestamp da aprova\u00e7\u00e3o"
+    },
+    "approval_notes": {
+      "type": "string"
+    },
+    "locked": {
+      "type": "boolean",
+      "default": false
+    },
+    "stock_committed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se o estoque j\u00e1 foi dado baixa"
+    }
+  },
+  "required": [
+    "date",
+    "contract_id",
+    "team_id"
+  ]
+}

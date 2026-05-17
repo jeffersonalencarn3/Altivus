@@ -1,0 +1,153 @@
+{
+  "name": "OperationalLog",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "description": "ID do workspace (tenant)"
+    },
+    "event_type": {
+      "type": "string",
+      "description": "Tipo canonico do evento. Ex: activity.checkin, material.stock_exit"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "auth",
+        "workspace",
+        "activity",
+        "attendance",
+        "inventory",
+        "field_log",
+        "appointment",
+        "approval",
+        "report",
+        "team",
+        "register",
+        "security",
+        "system"
+      ],
+      "default": "system"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "debug",
+        "info",
+        "warning",
+        "critical"
+      ],
+      "default": "info"
+    },
+    "action": {
+      "type": "string",
+      "description": "Acao operacional executada"
+    },
+    "description": {
+      "type": "string",
+      "description": "Resumo humano do evento"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "success",
+        "failed",
+        "pending"
+      ],
+      "default": "success"
+    },
+    "entity_type": {
+      "type": "string",
+      "description": "Entidade principal afetada"
+    },
+    "entity_id": {
+      "type": "string",
+      "description": "ID da entidade principal afetada"
+    },
+    "activity_id": {
+      "type": "string"
+    },
+    "team_id": {
+      "type": "string"
+    },
+    "contract_id": {
+      "type": "string"
+    },
+    "material_id": {
+      "type": "string"
+    },
+    "field_log_id": {
+      "type": "string"
+    },
+    "appointment_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "user_email": {
+      "type": "string"
+    },
+    "user_name": {
+      "type": "string"
+    },
+    "user_role": {
+      "type": "string"
+    },
+    "occurred_at": {
+      "type": "string",
+      "description": "Timestamp ISO do evento"
+    },
+    "created_at": {
+      "type": "string",
+      "description": "Timestamp ISO de criacao do log"
+    },
+    "event_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "web",
+        "service",
+        "realtime",
+        "system",
+        "import",
+        "automation"
+      ],
+      "default": "web"
+    },
+    "correlation_id": {
+      "type": "string",
+      "description": "ID para agrupar eventos da mesma operacao"
+    },
+    "sla_scope": {
+      "type": "string",
+      "description": "Escopo futuro para SLA/analytics"
+    },
+    "analytics_tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Dados estruturados adicionais para auditoria, analytics e IA"
+    },
+    "before": {
+      "type": "object",
+      "description": "Snapshot parcial antes da mudanca"
+    },
+    "after": {
+      "type": "object",
+      "description": "Snapshot parcial depois da mudanca"
+    }
+  },
+  "required": [
+    "workspace_id",
+    "event_type",
+    "occurred_at"
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "name": "WorkspaceUsage",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "logins": {
+      "type": "number",
+      "default": 0
+    },
+    "active_users": {
+      "type": "number",
+      "default": 0
+    },
+    "activities_created": {
+      "type": "number",
+      "default": 0
+    },
+    "appointments_created": {
+      "type": "number",
+      "default": 0
+    },
+    "photos_sent": {
+      "type": "number",
+      "default": 0
+    },
+    "reports_generated": {
+      "type": "number",
+      "default": 0
+    },
+    "pdfs_downloaded": {
+      "type": "number",
+      "default": 0
+    },
+    "daily_reports_filled": {
+      "type": "number",
+      "default": 0
+    },
+    "approvals_done": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "workspace_id",
+    "date"
+  ]
+}

@@ -1,0 +1,168 @@
+{
+  "name": "ActivitySession",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string"
+    },
+    "activity_id": {
+      "type": "string",
+      "description": "ID da atividade"
+    },
+    "team_id": {
+      "type": "string",
+      "description": "ID da equipe"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data da execu\u00e7\u00e3o"
+    },
+    "hora_inicio": {
+      "type": "string",
+      "description": "Timestamp ISO de in\u00edcio"
+    },
+    "hora_fim": {
+      "type": "string",
+      "description": "Timestamp ISO de fim"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "em_execucao",
+        "finalizado"
+      ],
+      "default": "em_execucao"
+    },
+    "checklist_inicio": {
+      "type": "object",
+      "description": "JSON com itens do checklist de in\u00edcio"
+    },
+    "checklist_fim": {
+      "type": "object",
+      "description": "JSON com itens do checklist de finaliza\u00e7\u00e3o"
+    },
+    "visual_checkin_map": {
+      "type": "object",
+      "description": "Mapa visual do check-in",
+      "properties": {
+        "imageUrl": {
+          "type": "string"
+        },
+        "annotations": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "canvasData": {
+          "type": "string"
+        },
+        "phase": {
+          "type": "string"
+        }
+      }
+    },
+    "visual_checkout_map": {
+      "type": "object",
+      "description": "Mapa visual do check-out",
+      "properties": {
+        "imageUrl": {
+          "type": "string"
+        },
+        "annotations": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "canvasData": {
+          "type": "string"
+        },
+        "phase": {
+          "type": "string"
+        }
+      }
+    },
+    "descidas_realizadas": {
+      "type": "number",
+      "default": 0
+    },
+    "descidas_planejadas_hoje": {
+      "type": "number",
+      "default": 0,
+      "description": "Meta de descidas definida pelo supervisor no check-in do dia"
+    },
+    "materiais_utilizados": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "material_id": {
+            "type": "string"
+          },
+          "material_name": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "fotos_antes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "fotos_durante": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "fotos_depois": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "observacoes": {
+      "type": "string"
+    },
+    "tempo_total_minutos": {
+      "type": "number",
+      "default": 0
+    },
+    "executed_area": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o textual da \u00e1rea efetivamente executada"
+    },
+    "execution_status": {
+      "type": "string",
+      "enum": [
+        "completed",
+        "partial",
+        "not_completed"
+      ],
+      "description": "Grau de conclus\u00e3o da execu\u00e7\u00e3o"
+    },
+    "execution_justificativa": {
+      "type": "string",
+      "description": "Justificativa obrigat\u00f3ria quando execution_status \u00e9 partial ou not_completed"
+    },
+    "checkout_photos": {
+      "type": "array",
+      "description": "Fotos de evid\u00eancia adicionadas no check-out",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "activity_id",
+    "team_id",
+    "date"
+  ]
+}

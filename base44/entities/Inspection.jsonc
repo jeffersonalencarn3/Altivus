@@ -1,0 +1,182 @@
+{
+  "name": "Inspection",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string"
+    },
+    "equipment_id": {
+      "type": "string"
+    },
+    "employee_id": {
+      "type": "string",
+      "description": "Colaborador que realizou"
+    },
+    "inspector_name": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "pre_uso",
+        "periodica",
+        "extraordinaria",
+        "operacional",
+        "entrega"
+      ],
+      "description": "Tipo de inspe\u00e7\u00e3o"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "checklist": {
+      "type": "object",
+      "description": "Itens do checklist",
+      "properties": {
+        "costuras": {
+          "type": "string",
+          "enum": [
+            "ok",
+            "atencao",
+            "reprovado",
+            "na"
+          ]
+        },
+        "conectores": {
+          "type": "string",
+          "enum": [
+            "ok",
+            "atencao",
+            "reprovado",
+            "na"
+          ]
+        },
+        "deformacoes": {
+          "type": "string",
+          "enum": [
+            "ok",
+            "atencao",
+            "reprovado",
+            "na"
+          ]
+        },
+        "oxidacao": {
+          "type": "string",
+          "enum": [
+            "ok",
+            "atencao",
+            "reprovado",
+            "na"
+          ]
+        },
+        "travas": {
+          "type": "string",
+          "enum": [
+            "ok",
+            "atencao",
+            "reprovado",
+            "na"
+          ]
+        },
+        "abrasao": {
+          "type": "string",
+          "enum": [
+            "ok",
+            "atencao",
+            "reprovado",
+            "na"
+          ]
+        },
+        "funcionamento": {
+          "type": "string",
+          "enum": [
+            "ok",
+            "atencao",
+            "reprovado",
+            "na"
+          ]
+        },
+        "limpeza": {
+          "type": "string",
+          "enum": [
+            "ok",
+            "atencao",
+            "reprovado",
+            "na"
+          ]
+        },
+        "marcacao_ca": {
+          "type": "string",
+          "enum": [
+            "ok",
+            "atencao",
+            "reprovado",
+            "na"
+          ]
+        },
+        "costuras_internas": {
+          "type": "string",
+          "enum": [
+            "ok",
+            "atencao",
+            "reprovado",
+            "na"
+          ]
+        }
+      }
+    },
+    "result": {
+      "type": "string",
+      "enum": [
+        "aprovado",
+        "observacao",
+        "revisao_n3",
+        "reprovado"
+      ],
+      "description": "Resultado da inspe\u00e7\u00e3o (somente supervisor N3 pode reprovar)"
+    },
+    "observations": {
+      "type": "string"
+    },
+    "photos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "attachment_url": {
+      "type": "string"
+    },
+    "chemical_exposure": {
+      "type": "boolean",
+      "default": false
+    },
+    "chemical_products": {
+      "type": "string"
+    },
+    "approved_by": {
+      "type": "string",
+      "description": "Supervisor N3 aprovador"
+    },
+    "next_inspection_date": {
+      "type": "string"
+    },
+    "activity_id": {
+      "type": "string"
+    },
+    "ai_alert": {
+      "type": "string",
+      "description": "Recomenda\u00e7\u00e3o da IA"
+    },
+    "ai_score_impact": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "equipment_id",
+    "type",
+    "date"
+  ]
+}

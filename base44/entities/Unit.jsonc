@@ -1,0 +1,32 @@
+{
+  "name": "Unit",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "description": "ID do workspace (tenant)"
+    },
+    "name": {
+      "type": "string",
+      "description": "Nome da obra/unidade"
+    },
+    "contract_id": {
+      "type": "string",
+      "description": "ID do contrato"
+    },
+    "location": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

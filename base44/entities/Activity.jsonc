@@ -1,0 +1,145 @@
+{
+  "name": "Activity",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "description": "ID do workspace (tenant)"
+    },
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo da atividade"
+    },
+    "contract_id": {
+      "type": "string"
+    },
+    "unit_id": {
+      "type": "string"
+    },
+    "area_id": {
+      "type": "string"
+    },
+    "team_id": {
+      "type": "string"
+    },
+    "service_type_id": {
+      "type": "string"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "in_progress",
+        "delayed",
+        "completed"
+      ],
+      "default": "not_started"
+    },
+    "progress": {
+      "type": "number",
+      "default": 0,
+      "description": "% de progresso"
+    },
+    "descents_planned": {
+      "type": "number",
+      "default": 0,
+      "description": "N\u00famero de descidas planejadas"
+    },
+    "descents_completed": {
+      "type": "number",
+      "default": 0,
+      "description": "Descidas realizadas"
+    },
+    "time_per_descent": {
+      "type": "number",
+      "default": 0,
+      "description": "Tempo estimado por descida (horas)"
+    },
+    "hours_planned": {
+      "type": "number",
+      "default": 0,
+      "description": "Horas previstas"
+    },
+    "hours_actual": {
+      "type": "number",
+      "default": 0,
+      "description": "Horas realizadas"
+    },
+    "observations": {
+      "type": "string",
+      "description": "Observa\u00e7\u00f5es t\u00e9cnicas"
+    },
+    "risks": {
+      "type": "string",
+      "description": "Riscos identificados"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "default": "medium"
+    },
+    "area_m2": {
+      "type": "number",
+      "default": 0,
+      "description": "\u00c1rea total em m\u00b2"
+    },
+    "tipo_servico": {
+      "type": "string",
+      "enum": [
+        "telhado",
+        "fachada"
+      ],
+      "description": "Tipo de servi\u00e7o"
+    },
+    "bloco_nome": {
+      "type": "string",
+      "description": "Nome do bloco (ex: Bloco 7, ETE)"
+    },
+    "num_alpinistas": {
+      "type": "number",
+      "default": 1,
+      "description": "N\u00famero de alpinistas da equipe"
+    },
+    "dias_planejados": {
+      "type": "number",
+      "default": 0,
+      "description": "Dias planejados (calculado)"
+    },
+    "tempo_total_horas": {
+      "type": "number",
+      "default": 0,
+      "description": "Horas totais planejadas"
+    },
+    "planning_log": {
+      "type": "array",
+      "description": "Hist\u00f3rico de rec\u00e1lculos de planejamento",
+      "items": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string"
+          },
+          "msg": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "title"
+  ]
+}

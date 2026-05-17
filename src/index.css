@@ -1,0 +1,424 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-inter: 'Inter', sans-serif;
+
+    /* ── Corporate Executive Dark Theme ── */
+    --background: 222 45% 5%;
+    --foreground: 215 20% 65%;
+    --card: 222 40% 7%;
+    --card-foreground: 210 20% 94%;
+    --popover: 222 40% 7%;
+    --popover-foreground: 210 20% 94%;
+
+    /* corporate blue primary — slightly desaturated, more refined */
+    --primary: 199 85% 48%;
+    --primary-foreground: 222 45% 5%;
+
+    --secondary: 220 28% 13%;
+    --secondary-foreground: 210 18% 62%;
+
+    --muted: 220 28% 10%;
+    --muted-foreground: 215 12% 42%;
+
+    --accent: 158 72% 44%;
+    --accent-foreground: 222 45% 5%;
+
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 25% 16%;
+    --input: 220 25% 11%;
+    --ring: 199 85% 48%;
+
+    --chart-1: 199 85% 48%;
+    --chart-2: 158 72% 44%;
+    --chart-3: 258 78% 62%;
+    --chart-4: 34 88% 52%;
+    --chart-5: 0 72% 55%;
+
+    --radius: 0.875rem;
+
+    --sidebar-background: 222 48% 4%;
+    --sidebar-foreground: 210 20% 94%;
+    --sidebar-primary: 199 85% 48%;
+    --sidebar-primary-foreground: 222 45% 5%;
+    --sidebar-accent: 220 28% 10%;
+    --sidebar-accent-foreground: 210 20% 94%;
+    --sidebar-border: 220 25% 11%;
+    --sidebar-ring: 199 85% 48%;
+
+    --success: 158 72% 40%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 88% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --neon-blue: #14B8D4;
+    --neon-purple: #6D56E8;
+    --neon-green: #00D99A;
+    --neon-orange: #E87D00;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply text-foreground font-inter;
+    background-color: #050914;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    color: #FFFFFF;
+  }
+  p, span, li {
+    color: inherit;
+  }
+}
+
+/* ── Neon Glow Utilities ── */
+@layer utilities {
+  /* Glows — 20% reduced intensity, corporate tone */
+  .glow-blue  { box-shadow: 0 0 8px rgba(20,184,212,0.32), 0 0 22px rgba(20,184,212,0.10); }
+  .glow-purple { box-shadow: 0 0 8px rgba(109,86,232,0.32), 0 0 22px rgba(109,86,232,0.10); }
+  .glow-green { box-shadow: 0 0 8px rgba(0,217,154,0.32), 0 0 22px rgba(0,217,154,0.10); }
+  .glow-orange { box-shadow: 0 0 8px rgba(232,125,0,0.32), 0 0 22px rgba(232,125,0,0.10); }
+  .glow-red   { box-shadow: 0 0 8px rgba(220,55,55,0.32), 0 0 22px rgba(220,55,55,0.10); }
+
+  /* Glassmorphism cards — corporate, refined */
+  .glass {
+    background: rgba(255,255,255,0.03) !important;
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    border: 1px solid rgba(255,255,255,0.07) !important;
+    box-shadow: 0 6px 28px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05) !important;
+  }
+  .glass-blue {
+    background: rgba(20,184,212,0.04) !important;
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    border: 1px solid rgba(20,184,212,0.10) !important;
+    box-shadow: 0 6px 28px rgba(0,0,0,0.5), 0 0 14px rgba(20,184,212,0.05), inset 0 1px 0 rgba(20,184,212,0.07) !important;
+  }
+  .glass-purple {
+    background: rgba(109,86,232,0.04) !important;
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    border: 1px solid rgba(109,86,232,0.10) !important;
+    box-shadow: 0 6px 28px rgba(0,0,0,0.5), 0 0 14px rgba(109,86,232,0.05), inset 0 1px 0 rgba(109,86,232,0.07) !important;
+  }
+
+  /* 3D card lift */
+  .card-3d {
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s ease;
+  }
+  .card-3d:hover {
+    transform: translateY(-3px) scale(1.004);
+    box-shadow: 0 12px 40px rgba(20,184,212,0.08), 0 4px 12px rgba(0,0,0,0.6);
+  }
+
+  /* Button microinteraction — refined */
+  .btn-neon {
+    transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .btn-neon:hover {
+    box-shadow: 0 0 12px rgba(20,184,212,0.40), 0 0 28px rgba(20,184,212,0.14);
+    transform: translateY(-2px);
+  }
+  .btn-neon:active {
+    transform: scale(0.96);
+    box-shadow: 0 0 6px rgba(20,184,212,0.22);
+  }
+
+  /* Corporate borders */
+  .border-neon { border-color: rgba(20,184,212,0.28) !important; }
+  .border-neon-purple { border-color: rgba(109,86,232,0.28) !important; }
+  .border-neon-green { border-color: rgba(0,217,154,0.28) !important; }
+
+  /* Text hierarchy */
+  .text-primary-content { color: #FFFFFF; }
+  .text-secondary-content { color: #A0AEC0; }
+
+  /* Depth layers */
+  .layer-1 { background: rgba(255,255,255,0.02); }
+  .layer-2 { background: rgba(255,255,255,0.04); }
+  .layer-3 { background: rgba(255,255,255,0.06); }
+
+  /* Animated entrance */
+  .fade-in-up {
+    animation: fadeInUp 0.4s cubic-bezier(0.16,1,0.3,1) both;
+  }
+  .fade-in-up-delay-1 { animation-delay: 0.05s; }
+  .fade-in-up-delay-2 { animation-delay: 0.10s; }
+  .fade-in-up-delay-3 { animation-delay: 0.15s; }
+  .fade-in-up-delay-4 { animation-delay: 0.20s; }
+  .fade-in-up-delay-5 { animation-delay: 0.25s; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Shimmer skeleton animation ── */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.shimmer-line {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.04) 0px,
+    rgba(255,255,255,0.09) 80px,
+    rgba(255,255,255,0.04) 160px
+  ) !important;
+  background-size: 400px 100% !important;
+  animation: shimmer 1.6s ease-in-out infinite !important;
+}
+
+/* ── Mobile safe area ── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .pb-safe {
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  }
+}
+
+/* ── Mobile bottom nav clearance ── */
+@media (max-width: 767px) {
+  main { padding-bottom: 96px; }
+}
+
+/* ── Spin animation for loading icons ── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes neonPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+
+@keyframes tabFadeIn {
+  from { opacity: 0; transform: translateY(6px) scale(0.99); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Page content entrance */
+.page-enter {
+  animation: tabFadeIn 0.28s cubic-bezier(0.16,1,0.3,1) both;
+}
+
+/* ── ALTIVUS Brand Background (Dark) ── */
+body {
+  background-color: #050914;
+}
+
+/* Brand image — quase invisível, apenas textura */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url('https://media.base44.com/images/public/69c51d6a9454393456c760a3/3ba30064d_ChatGPTImage28deabrde202611_19_53.png');
+  background-size: cover;
+  background-position: center right;
+  background-repeat: no-repeat;
+  opacity: 0.012;
+  filter: blur(4px) grayscale(60%);
+  pointer-events: none;
+  z-index: -2;
+}
+
+/* Grid texture sutil + overlay escuro */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    rgba(5, 9, 20, 0.96),
+    linear-gradient(rgba(20, 184, 212, 0.005) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 184, 212, 0.005) 1px, transparent 1px);
+  background-size: 100%, 80px 80px, 80px 80px;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ── TEMA CLARO ── */
+html.light {
+  --background: 220 20% 97%;
+  --foreground: 222 45% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 45% 12%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 45% 12%;
+  --primary: 199 85% 40%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 14% 92%;
+  --secondary-foreground: 222 30% 30%;
+  --muted: 220 14% 94%;
+  --muted-foreground: 220 10% 46%;
+  --accent: 158 60% 38%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 220 14% 88%;
+  --input: 220 14% 96%;
+  --ring: 199 85% 40%;
+  --sidebar-background: 220 20% 98%;
+  --sidebar-foreground: 222 30% 20%;
+  --sidebar-primary: 199 85% 40%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 220 14% 93%;
+  --sidebar-accent-foreground: 222 30% 25%;
+  --sidebar-border: 220 14% 88%;
+}
+
+html.light body {
+  background-color: #f0f2f7;
+  background-image: none;
+}
+
+html.light body::before {
+  display: none;
+}
+
+html.light body::after {
+  background:
+    rgba(240, 242, 247, 0.97),
+    linear-gradient(rgba(20, 100, 150, 0.012) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 100, 150, 0.012) 1px, transparent 1px);
+  background-size: 100%, 64px 64px, 64px 64px;
+}
+
+/* Componentes no tema claro */
+html.light .glass {
+  background: rgba(255,255,255,0.85) !important;
+  border: 1px solid rgba(0,0,0,0.07) !important;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9) !important;
+}
+
+html.light .glass-blue {
+  background: rgba(20,120,200,0.05) !important;
+  border: 1px solid rgba(20,120,200,0.12) !important;
+}
+
+html.light [data-radix-tabs-list] {
+  background: rgba(0,0,0,0.04) !important;
+  border: 1px solid rgba(0,0,0,0.08) !important;
+}
+
+html.light [data-radix-tabs-trigger] {
+  color: #64748b !important;
+}
+
+html.light [data-radix-tabs-trigger][data-state="active"] {
+  background: rgba(20,130,200,0.10) !important;
+  color: #0e7490 !important;
+  box-shadow: 0 1px 6px rgba(20,130,200,0.15), 0 1px 4px rgba(0,0,0,0.08) !important;
+  border: 1px solid rgba(20,130,200,0.18) !important;
+}
+
+html.light ::-webkit-scrollbar-thumb {
+  background: rgba(20, 120, 200, 0.18);
+}
+
+html.light tbody tr:hover {
+  background: rgba(20, 130, 200, 0.04) !important;
+}
+
+/* ── Table rows hover effect ── */
+tbody tr {
+  transition: background 0.15s ease;
+}
+tbody tr:hover {
+  background: rgba(20,184,212,0.025) !important;
+}
+
+/* ── Focus ring global ── */
+*:focus-visible {
+  outline: 2px solid rgba(20,184,212,0.42);
+  outline-offset: 2px;
+}
+
+/* ── Custom scrollbar ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(20, 184, 212, 0.16);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(20, 184, 212, 0.32);
+}
+
+/* ── Tabs premium style ── */
+[data-radix-tabs-list] {
+  background: rgba(0, 0, 0, 0.35) !important;
+  border: 1px solid rgba(255,255,255,0.07) !important;
+  padding: 4px;
+  border-radius: 12px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+[data-radix-tabs-trigger] {
+  transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1) !important;
+  color: #A0AEC0 !important;
+  border-radius: 9px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.01em !important;
+}
+[data-radix-tabs-trigger][data-state="active"] {
+  background: linear-gradient(135deg, rgba(20,184,212,0.10), rgba(109,86,232,0.10)) !important;
+  color: #14B8D4 !important;
+  box-shadow: 0 0 10px rgba(20,184,212,0.14), 0 2px 8px rgba(0,0,0,0.5), inset 0 1px 0 rgba(20,184,212,0.12) !important;
+  transform: scale(1.02) !important;
+  border: 1px solid rgba(20,184,212,0.14) !important;
+}
+[data-radix-tabs-trigger]:hover:not([data-state="active"]) {
+  color: #FFFFFF !important;
+  background: rgba(255,255,255,0.05) !important;
+}
+
+/* ── Z-index hierarchy — prevent overlay blocking interactions ── */
+/* Layer 0:  body::before / ::after  → z-index: -1 (decorative, never blocks) */
+/* Layer 10: main content            → z-index: 10                            */
+/* Layer 30: sidebar                 → z-index: 30                            */
+/* Layer 40: sticky header / navbar  → z-index: 40                            */
+/* Layer 50: activity panel toggle   → z-index: 50                            */
+/* Layer 100: modal overlays         → z-index: 100                           */
+/* Layer 110: modal content          → z-index: 110                           */
+/* Layer 200: select / popover menus → z-index: 200                           */
+
+/* Radix portal elements — force above everything */
+[data-radix-popper-content-wrapper] {
+  z-index: 200 !important;
+}
+
+/* Ensure custom inline modals (fixed + backdrop) stay above layout */
+.modal-overlay {
+  z-index: 100 !important;
+  position: fixed !important;
+  inset: 0 !important;
+  pointer-events: auto !important;
+}
+
+/* ── Progress bars — corporate refined ── */
+.neon-progress-blue {
+  background: linear-gradient(90deg, #14B8D4, #6D56E8);
+  box-shadow: 0 0 5px rgba(20, 184, 212, 0.36);
+}
+.neon-progress-green {
+  background: linear-gradient(90deg, #00D99A, #14B8D4);
+  box-shadow: 0 0 5px rgba(0, 217, 154, 0.36);
+}
+.neon-progress-red {
+  background: linear-gradient(90deg, #DC3737, #E87D00);
+  box-shadow: 0 0 5px rgba(220, 55, 55, 0.36);
+}

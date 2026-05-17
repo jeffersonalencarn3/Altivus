@@ -1,0 +1,51 @@
+{
+  "name": "Contract",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "description": "ID do workspace (tenant)"
+    },
+    "name": {
+      "type": "string",
+      "description": "Nome do contrato"
+    },
+    "company": {
+      "type": "string",
+      "description": "Empresa contratante"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "completed",
+        "suspended",
+        "cancelled"
+      ],
+      "default": "active"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "sla_days": {
+      "type": "number",
+      "description": "Prazo contratual em dias"
+    },
+    "value": {
+      "type": "number",
+      "description": "Valor do contrato"
+    },
+    "description": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "company"
+  ]
+}

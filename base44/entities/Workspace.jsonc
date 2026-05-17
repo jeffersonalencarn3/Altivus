@@ -1,0 +1,131 @@
+{
+  "name": "Workspace",
+  "type": "object",
+  "properties": {
+    "company_name": {
+      "type": "string",
+      "description": "Nome da empresa"
+    },
+    "cnpj": {
+      "type": "string"
+    },
+    "segment": {
+      "type": "string",
+      "enum": [
+        "trabalho_altura",
+        "construcao_civil",
+        "industria",
+        "mineracao",
+        "energia",
+        "manutencao_industrial",
+        "outro"
+      ]
+    },
+    "responsible_name": {
+      "type": "string"
+    },
+    "responsible_email": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "role_title": {
+      "type": "string",
+      "description": "Cargo do respons\u00e1vel"
+    },
+    "estimated_workers": {
+      "type": "number",
+      "default": 0
+    },
+    "account_status": {
+      "type": "string",
+      "enum": [
+        "trial",
+        "awaiting_approval",
+        "active",
+        "blocked",
+        "expired",
+        "lead",
+        "pilot",
+        "paid"
+      ],
+      "default": "trial"
+    },
+    "commercial_status": {
+      "type": "string",
+      "enum": [
+        "new_signup",
+        "in_trial",
+        "engaged",
+        "low_usage",
+        "potential_buyer",
+        "contact_made",
+        "demo_scheduled",
+        "proposal_sent",
+        "converted",
+        "lost",
+        "blocked"
+      ],
+      "default": "new_signup"
+    },
+    "trial_start": {
+      "type": "string",
+      "format": "date"
+    },
+    "trial_end": {
+      "type": "string",
+      "format": "date"
+    },
+    "user_limit": {
+      "type": "number",
+      "default": 10
+    },
+    "collaborator_limit": {
+      "type": "number",
+      "default": 50
+    },
+    "activity_limit": {
+      "type": "number",
+      "default": 100
+    },
+    "report_limit": {
+      "type": "number",
+      "default": 50
+    },
+    "internal_notes": {
+      "type": "string"
+    },
+    "adoption_score": {
+      "type": "number",
+      "default": 0
+    },
+    "last_login": {
+      "type": "string"
+    },
+    "logo_url": {
+      "type": "string"
+    },
+    "report_email": {
+      "type": "string"
+    },
+    "report_frequency": {
+      "type": "string",
+      "enum": [
+        "daily",
+        "weekly",
+        "monthly",
+        "never"
+      ],
+      "default": "weekly"
+    },
+    "owner_user_id": {
+      "type": "string",
+      "description": "ID do usu\u00e1rio admin principal"
+    }
+  },
+  "required": [
+    "company_name",
+    "responsible_email"
+  ]
+}

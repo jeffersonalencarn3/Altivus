@@ -1,0 +1,38 @@
+{
+  "name": "Team",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "description": "ID do workspace (tenant)"
+    },
+    "name": {
+      "type": "string",
+      "description": "Nome da equipe"
+    },
+    "leader": {
+      "type": "string",
+      "description": "L\u00edder da equipe"
+    },
+    "specialty": {
+      "type": "string",
+      "description": "Especialidade"
+    },
+    "color": {
+      "type": "string",
+      "description": "Cor identificadora",
+      "default": "#3b82f6"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "name": "MaterialMovement",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "description": "ID do workspace (tenant)"
+    },
+    "material_id": {
+      "type": "string",
+      "description": "ID do material movimentado"
+    },
+    "material_name": {
+      "type": "string",
+      "description": "Nome do material no momento da movimentação"
+    },
+    "quantity": {
+      "type": "number",
+      "default": 0,
+      "description": "Quantidade movimentada"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "entry",
+        "exit",
+        "adjustment"
+      ],
+      "description": "Tipo de movimentação de estoque"
+    },
+    "field_log_id": {
+      "type": "string",
+      "description": "Diário de campo que originou a movimentação"
+    },
+    "activity_id": {
+      "type": "string",
+      "description": "Atividade relacionada"
+    },
+    "contract_id": {
+      "type": "string",
+      "description": "Contrato relacionado"
+    },
+    "collaborator": {
+      "type": "string",
+      "description": "Usuário ou colaborador responsável pela movimentação"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "confirmed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Indica se a movimentação foi aprovada/conferida"
+    },
+    "movement_at": {
+      "type": "string",
+      "description": "Timestamp ISO da movimentação"
+    }
+  },
+  "required": [
+    "workspace_id",
+    "material_id",
+    "quantity",
+    "type"
+  ]
+}

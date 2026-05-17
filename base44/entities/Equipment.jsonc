@@ -1,0 +1,170 @@
+{
+  "name": "Equipment",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string"
+    },
+    "employee_id": {
+      "type": "string",
+      "description": "Colaborador respons\u00e1vel/vinculado"
+    },
+    "tag": {
+      "type": "string",
+      "description": "TAG \u00fanica do equipamento"
+    },
+    "serial_number": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "cinto",
+        "talabarte",
+        "descensor",
+        "ascensor",
+        "travaQuedas",
+        "capacete",
+        "conector",
+        "polia",
+        "corda",
+        "absorvedorEnergia",
+        "mosquetao",
+        "epi_outro"
+      ],
+      "description": "Tipo de equipamento"
+    },
+    "name": {
+      "type": "string"
+    },
+    "manufacturer": {
+      "type": "string"
+    },
+    "model": {
+      "type": "string"
+    },
+    "batch": {
+      "type": "string",
+      "description": "Lote de fabrica\u00e7\u00e3o"
+    },
+    "ca_number": {
+      "type": "string",
+      "description": "N\u00famero do CA (Certificado de Aprova\u00e7\u00e3o)"
+    },
+    "manufacture_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "delivery_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "expiry_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "normal",
+        "observacao",
+        "revisao_n3",
+        "bloqueado",
+        "descartado"
+      ],
+      "default": "normal",
+      "description": "Status operacional"
+    },
+    "alert_level": {
+      "type": "string",
+      "enum": [
+        "normal",
+        "observacao",
+        "revisao_n3",
+        "bloqueado"
+      ],
+      "default": "normal"
+    },
+    "photos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "observations": {
+      "type": "string"
+    },
+    "operational_score": {
+      "type": "number",
+      "default": 100
+    },
+    "total_uses": {
+      "type": "number",
+      "default": 0
+    },
+    "total_hours_used": {
+      "type": "number",
+      "default": 0
+    },
+    "chemical_exposure_count": {
+      "type": "number",
+      "default": 0
+    },
+    "last_inspection_date": {
+      "type": "string"
+    },
+    "next_inspection_date": {
+      "type": "string"
+    },
+    "inspection_interval_days": {
+      "type": "number",
+      "default": 90
+    },
+    "chemical_exposures": {
+      "type": "array",
+      "description": "Hist\u00f3rico de exposi\u00e7\u00f5es qu\u00edmicas",
+      "items": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string"
+          },
+          "product": {
+            "type": "string"
+          },
+          "activity_id": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "audit_trail": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string"
+          },
+          "user": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string"
+          },
+          "details": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "tag",
+    "type",
+    "name"
+  ]
+}

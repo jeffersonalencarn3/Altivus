@@ -1,0 +1,60 @@
+{
+  "name": "WorkspaceMember",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "description": "ID do workspace"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "ID do usu\u00e1rio (base44 user id)"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "E-mail do usu\u00e1rio (para lookup)"
+    },
+    "user_name": {
+      "type": "string",
+      "description": "Nome do usu\u00e1rio"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "workspace_admin",
+        "supervisor",
+        "operacional",
+        "visualizador"
+      ],
+      "default": "operacional",
+      "description": "Papel no workspace"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive",
+        "suspended"
+      ],
+      "default": "active"
+    },
+    "joined_at": {
+      "type": "string",
+      "description": "Timestamp ISO de quando entrou"
+    },
+    "last_seen_at": {
+      "type": "string",
+      "description": "\u00daltimo acesso"
+    },
+    "invited_by": {
+      "type": "string",
+      "description": "E-mail de quem convidou"
+    }
+  },
+  "required": [
+    "workspace_id",
+    "user_id",
+    "user_email",
+    "role"
+  ]
+}

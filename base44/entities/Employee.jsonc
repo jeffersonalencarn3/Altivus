@@ -1,0 +1,171 @@
+{
+  "name": "Employee",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string",
+      "description": "Nome completo"
+    },
+    "team_id": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive",
+        "suspended"
+      ],
+      "default": "active"
+    },
+    "photo_url": {
+      "type": "string",
+      "description": "Foto do colaborador"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "cpf": {
+      "type": "string"
+    },
+    "rg": {
+      "type": "string"
+    },
+    "birth_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "admission_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "blood_type": {
+      "type": "string",
+      "enum": [
+        "A+",
+        "A-",
+        "B+",
+        "B-",
+        "AB+",
+        "AB-",
+        "O+",
+        "O-",
+        ""
+      ]
+    },
+    "emergency_contact": {
+      "type": "string"
+    },
+    "emergency_phone": {
+      "type": "string"
+    },
+    "certifications": {
+      "type": "array",
+      "description": "Certifica\u00e7\u00f5es e treinamentos",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "NR35",
+              "IRATA",
+              "ANEAC",
+              "espacoConfinado",
+              "resgate",
+              "inspecaoEquipamentos",
+              "primeirosAuxilios",
+              "outro"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "issuer": {
+            "type": "string"
+          },
+          "issued_date": {
+            "type": "string"
+          },
+          "expiry_date": {
+            "type": "string"
+          },
+          "certificate_number": {
+            "type": "string"
+          },
+          "attachment_url": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "valid",
+              "expiring",
+              "expired"
+            ]
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "operational_score": {
+      "type": "number",
+      "default": 100,
+      "description": "Score operacional 0-100"
+    },
+    "total_descents": {
+      "type": "number",
+      "default": 0
+    },
+    "total_hours": {
+      "type": "number",
+      "default": 0
+    },
+    "last_activity_date": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string"
+    },
+    "nr35_level": {
+      "type": "string",
+      "enum": [
+        "basico",
+        "avancado",
+        "supervisor",
+        ""
+      ],
+      "description": "N\u00edvel NR35"
+    },
+    "irata_level": {
+      "type": "string",
+      "enum": [
+        "1",
+        "2",
+        "3",
+        ""
+      ],
+      "description": "N\u00edvel IRATA"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

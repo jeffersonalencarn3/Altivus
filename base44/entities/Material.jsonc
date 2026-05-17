@@ -1,0 +1,42 @@
+{
+  "name": "Material",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "description": "ID do workspace (tenant)"
+    },
+    "name": {
+      "type": "string",
+      "description": "Nome do material"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "epi",
+        "ferramenta",
+        "consumivel"
+      ],
+      "description": "Tipo do material"
+    },
+    "quantity_available": {
+      "type": "number",
+      "description": "Quantidade dispon\u00edvel em estoque",
+      "default": 0
+    },
+    "unit": {
+      "type": "string",
+      "description": "Unidade de medida (un, m, kg, l, cx)",
+      "default": "un"
+    },
+    "low_stock_threshold": {
+      "type": "number",
+      "description": "Quantidade m\u00ednima antes de alertar estoque cr\u00edtico",
+      "default": 5
+    }
+  },
+  "required": [
+    "name",
+    "type"
+  ]
+}

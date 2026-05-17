@@ -1,0 +1,115 @@
+{
+  "name": "EmployeeChecklist",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string"
+    },
+    "employee_id": {
+      "type": "string"
+    },
+    "activity_id": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "pre_uso",
+        "pos_uso",
+        "inspecao_campo"
+      ],
+      "default": "pre_uso"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "time": {
+      "type": "string"
+    },
+    "equipment_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "items": {
+      "type": "object",
+      "properties": {
+        "cinto_ok": {
+          "type": "boolean"
+        },
+        "talabarte_ok": {
+          "type": "boolean"
+        },
+        "capacete_ok": {
+          "type": "boolean"
+        },
+        "luvas_ok": {
+          "type": "boolean"
+        },
+        "oculos_ok": {
+          "type": "boolean"
+        },
+        "corda_ok": {
+          "type": "boolean"
+        },
+        "conectores_ok": {
+          "type": "boolean"
+        },
+        "descensor_ok": {
+          "type": "boolean"
+        },
+        "ponto_ancoragem_ok": {
+          "type": "boolean"
+        },
+        "area_isolada_ok": {
+          "type": "boolean"
+        },
+        "condicao_climatica_ok": {
+          "type": "boolean"
+        },
+        "nr35_briefing_ok": {
+          "type": "boolean"
+        }
+      }
+    },
+    "chemical_products": {
+      "type": "string",
+      "description": "Produtos qu\u00edmicos a serem utilizados"
+    },
+    "observations": {
+      "type": "string"
+    },
+    "photos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "signed_by": {
+      "type": "string"
+    },
+    "supervisor_ok": {
+      "type": "boolean",
+      "default": false
+    },
+    "result": {
+      "type": "string",
+      "enum": [
+        "aprovado",
+        "pendente",
+        "reprovado"
+      ],
+      "default": "aprovado"
+    }
+  },
+  "required": [
+    "employee_id",
+    "type",
+    "date"
+  ]
+}

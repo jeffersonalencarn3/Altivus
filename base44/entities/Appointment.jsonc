@@ -1,0 +1,266 @@
+{
+  "name": "Appointment",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "description": "ID do workspace (tenant)"
+    },
+    "contract_id": {
+      "type": "string"
+    },
+    "activity_id": {
+      "type": "string"
+    },
+    "employee_id": {
+      "type": "string"
+    },
+    "employee_name": {
+      "type": "string"
+    },
+    "employee_role": {
+      "type": "string"
+    },
+    "team_id": {
+      "type": "string"
+    },
+    "area_id": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "start_time": {
+      "type": "string"
+    },
+    "end_time": {
+      "type": "string"
+    },
+    "total_hours": {
+      "type": "number",
+      "default": 0
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "in_progress",
+        "photo_pending",
+        "executing",
+        "report_pending",
+        "awaiting_approval",
+        "approved",
+        "rejected"
+      ],
+      "default": "not_started"
+    },
+    "progress": {
+      "type": "number",
+      "default": 0
+    },
+    "initial_condition": {
+      "type": "string"
+    },
+    "initial_observation": {
+      "type": "string"
+    },
+    "photos_before": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "caption": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "photos_after": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "caption": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "photos_during": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "caption": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "report_what_was_done": {
+      "type": "string"
+    },
+    "report_progress": {
+      "type": "string"
+    },
+    "report_impediments": {
+      "type": "string"
+    },
+    "report_risks": {
+      "type": "string"
+    },
+    "report_rework": {
+      "type": "boolean",
+      "default": false
+    },
+    "report_materials": {
+      "type": "string"
+    },
+    "report_equipment": {
+      "type": "string"
+    },
+    "report_weather": {
+      "type": "string",
+      "enum": [
+        "sunny",
+        "cloudy",
+        "windy",
+        "rain",
+        "high_risk"
+      ]
+    },
+    "report_safety_condition": {
+      "type": "string"
+    },
+    "report_incidents": {
+      "type": "string"
+    },
+    "report_worker_observations": {
+      "type": "string"
+    },
+    "report_responsible_observations": {
+      "type": "string"
+    },
+    "report_next_action": {
+      "type": "string"
+    },
+    "report_pending_items": {
+      "type": "string"
+    },
+    "report_status": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "draft",
+        "filled",
+        "awaiting_approval",
+        "approved",
+        "rejected"
+      ],
+      "default": "not_started"
+    },
+    "final_description": {
+      "type": "string"
+    },
+    "production_qty": {
+      "type": "number",
+      "default": 0
+    },
+    "production_unit": {
+      "type": "string"
+    },
+    "final_situation": {
+      "type": "string"
+    },
+    "pending_items": {
+      "type": "string"
+    },
+    "incidents": {
+      "type": "string"
+    },
+    "signature_worker": {
+      "type": "string"
+    },
+    "signature_responsible": {
+      "type": "string"
+    },
+    "signature_supervisor": {
+      "type": "string"
+    },
+    "signature_client": {
+      "type": "string"
+    },
+    "signature_at": {
+      "type": "string"
+    },
+    "approval_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "default": "pending"
+    },
+    "approval_by": {
+      "type": "string"
+    },
+    "approval_at": {
+      "type": "string"
+    },
+    "approval_notes": {
+      "type": "string"
+    },
+    "locked": {
+      "type": "boolean",
+      "default": false
+    },
+    "audit_trail": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string"
+          },
+          "user": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string"
+          },
+          "details": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "contract_id",
+    "employee_id",
+    "date"
+  ]
+}

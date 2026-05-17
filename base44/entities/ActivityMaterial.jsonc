@@ -1,0 +1,28 @@
+{
+  "name": "ActivityMaterial",
+  "type": "object",
+  "properties": {
+    "workspace_id": {
+      "type": "string",
+      "description": "ID do workspace (tenant)"
+    },
+    "activity_id": {
+      "type": "string",
+      "description": "ID da atividade"
+    },
+    "material_id": {
+      "type": "string",
+      "description": "ID do material"
+    },
+    "quantity_used": {
+      "type": "number",
+      "description": "Quantidade utilizada",
+      "default": 0
+    }
+  },
+  "required": [
+    "activity_id",
+    "material_id",
+    "quantity_used"
+  ]
+}

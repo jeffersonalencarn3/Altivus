@@ -1,0 +1,17 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "supervisor",
+        "operacional"
+      ],
+      "default": "operacional",
+      "description": "N\u00edvel de acesso do usu\u00e1rio"
+    }
+  },
+  "required": []
+}
