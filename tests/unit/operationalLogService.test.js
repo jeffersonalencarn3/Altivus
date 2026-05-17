@@ -1,11 +1,11 @@
 ﻿import { describe, expect, it, vi } from 'vitest'
-import { operationalLogService } from '@/services/operationalLogService'
+import { operationalLogService, OPERATIONAL_LOG_EVENTS } from '@/services/operationalLogService'
 
 describe('operationalLogService', () => {
   it('normaliza payload enterprise com created_at e identidade completa', () => {
     const payload = operationalLogService.normalizeLog({
       workspace_id: 'ws-alpha',
-      event_type: 'activity.start',
+      event_type: OPERATIONAL_LOG_EVENTS.ACTIVITY_START,
       action: 'start_activity',
       description: 'Atividade iniciada',
       entity_type: 'Activity',
@@ -34,7 +34,7 @@ describe('operationalLogService', () => {
 
     await expect(operationalLogService.record(db, {
       workspace_id: 'ws-alpha',
-      event_type: 'activity.start',
+      event_type: OPERATIONAL_LOG_EVENTS.ACTIVITY_START,
     })).resolves.toBeNull()
   })
 
@@ -55,7 +55,7 @@ describe('operationalLogService', () => {
 
     expect(create).toHaveBeenNthCalledWith(1, expect.objectContaining({
       workspace_id: 'ws-blocked',
-      event_type: 'workspace.blocked',
+      event_type: OPERATIONAL_LOG_EVENTS.WORKSPACE_BLOCKED,
       action: 'block_workspace_access',
       entity_type: 'Workspace',
       entity_id: 'ws-blocked',
@@ -64,7 +64,7 @@ describe('operationalLogService', () => {
     }))
     expect(create).toHaveBeenNthCalledWith(2, expect.objectContaining({
       workspace_id: 'ws-expired',
-      event_type: 'workspace.expired',
+      event_type: OPERATIONAL_LOG_EVENTS.WORKSPACE_EXPIRED,
       action: 'expire_workspace_access',
       entity_type: 'Workspace',
       entity_id: 'ws-expired',

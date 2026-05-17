@@ -101,12 +101,10 @@ export const appointmentService = {
         status: decision === 'approved' ? 'approved' : 'rejected',
         audit_trail: trail,
       });
-      await operationalLogService.record(db, {
-        source: 'service',
-        category: 'approval',
+      await operationalLogService.recordApproval(db, {
+        workspace_id: appointment.workspace_id || '',
         event_type: 'appointment.approval',
-        action: decision,
-        severity: decision === 'approved' ? 'info' : 'warning',
+        decision,
         description: `Aprovacao do apontamento: ${decision}`,
         entity_type: 'Appointment',
         entity_id: appointment.id,
@@ -118,7 +116,7 @@ export const appointmentService = {
         before: appointment,
         after: updated,
         metadata: { notes },
-        analytics_tags: ['approval', 'appointment', 'audit'],
+        analytics_tags: ['appointment'],
       });
     }, 'Erro ao aprovar apontamento');
   },

@@ -73,6 +73,7 @@ export const fieldLogService = {
         : await db.FieldLog.create(payload);
 
       await operationalLogService.record(db, {
+        workspace_id: data.workspace_id || saved.workspace_id || '',
         source: 'service',
         category: 'field_log',
         event_type: data.id ? (isClose ? 'field_log.close' : 'field_log.update') : 'field_log.create',
@@ -158,12 +159,10 @@ export const fieldLogService = {
         const logMovements = movements.filter(m => m.field_log_id === log.id);
         await Promise.all(logMovements.map(m => db.MaterialMovement.update(m.id, { confirmed: true })));
       }
-      await operationalLogService.record(db, {
-        source: 'service',
-        category: 'approval',
+      await operationalLogService.recordApproval(db, {
+        workspace_id: log.workspace_id || '',
         event_type: 'field_log.approval',
-        action: decision,
-        severity: decision === 'approved' ? 'info' : 'warning',
+        decision,
         description: `Aprovacao do diario de campo: ${decision}`,
         entity_type: 'FieldLog',
         entity_id: log.id,
@@ -175,7 +174,7 @@ export const fieldLogService = {
         before: log,
         after: updated,
         metadata: { notes, confirmed_movements: movements.filter(m => m.field_log_id === log.id).length },
-        analytics_tags: ['approval', 'field_log', 'audit'],
+        analytics_tags: ['field_log'],
       });
     }, 'Erro ao aprovar diário');
   },

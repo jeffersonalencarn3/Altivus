@@ -145,10 +145,8 @@ export const materialService = {
           quantity_available: nextQuantity(material?.quantity_available, -qty),
         });
 
-        await logInventoryEvent(db, {
+        await operationalLogService.recordInventoryExit(db, {
           workspace_id: source.workspaceId || material?.workspace_id || item.workspace_id || '',
-          event_type: 'material.stock_exit',
-          action: 'consume_material',
           description: `Baixa de estoque: ${item.material_name || material?.name || item.name || materialId}`,
           entity_type: 'Material',
           entity_id: materialId,
@@ -163,7 +161,6 @@ export const materialService = {
             field_log_id: source.fieldLogId,
             notes: source.notes,
           },
-          analytics_tags: ['inventory', 'stock', 'audit'],
         });
 
         if (source.createMovement) {
