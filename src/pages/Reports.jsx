@@ -18,6 +18,7 @@ import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { reportService } from '@/services/reportService';
 import { invalidateGroup } from '@/services/serviceUtils';
+import { buildGoLiveSelect } from '@/lib/goLive';
 
 const TAB_CFG = [
   { id: 'all',      l: 'Todos',              icon: FileText },
@@ -35,7 +36,8 @@ const STATUS_CFG = {
 };
 
 export default function Reports() {
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, currentWorkspace } = useWorkspace();
+  const goLiveDate = currentWorkspace?.go_live_date;
   const db = useWorkspaceEntities();
   const qc = useQueryClient();
   const { data: activities = [] } = useActivities();
@@ -49,10 +51,11 @@ export default function Reports() {
   const [viewingReport, setViewing] = useState(null);
 
   const { data: reports = [], isLoading, refetch } = useQuery({
-    queryKey: ['operationalReports', workspaceId],
+    queryKey: ['operationalReports', workspaceId, goLiveDate || 'all'],
     queryFn: () => db.ActivityOperationalReport.list('-generated_at', 200),
     enabled: !!workspaceId,
     staleTime: 2 * 60_000,
+    select: buildGoLiveSelect(goLiveDate, 'ActivityOperationalReport'),
   });
 
   const approveMut = useMutation({

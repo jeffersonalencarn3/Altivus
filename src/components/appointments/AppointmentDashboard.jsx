@@ -6,6 +6,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, L
 import { Clock, FileText, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { buildGoLiveSelect } from '@/lib/goLive';
 
 const CHART_TT = {
   contentStyle: { background: 'rgba(8,14,28,0.97)', border: '1px solid rgba(20,184,212,0.22)', borderRadius: 12, color: '#fff' },
@@ -32,9 +33,15 @@ function Widget({ label, value, sub, color = '#14B8D4', icon: Icon }) {
 export default function AppointmentDashboard() {
   const today = new Date().toISOString().split('T')[0];
   const db = useWorkspaceEntities();
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, currentWorkspace } = useWorkspace();
+  const goLiveDate = currentWorkspace?.go_live_date;
 
-  const { data: appts = [], isLoading } = useQuery({ queryKey: ['appointments', workspaceId], queryFn: () => db.Appointment.list('-date', 200), enabled: !!workspaceId });
+  const { data: appts = [], isLoading } = useQuery({
+    queryKey: ['appointments', workspaceId, goLiveDate || 'all'],
+    queryFn: () => db.Appointment.list('-date', 200),
+    enabled: !!workspaceId,
+    select: buildGoLiveSelect(goLiveDate, 'Appointment'),
+  });
 
   const stats = useMemo(() => {
     const todayAppts = appts.filter(a => a.date === today);

@@ -122,6 +122,11 @@
     "owner_user_id": {
       "type": "string",
       "description": "ID do usu\u00e1rio admin principal"
+    },
+    "go_live_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data a partir da qual dados operacionais contam como produ\u00e7\u00e3o real"
     }
   },
   "required": [

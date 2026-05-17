@@ -5,15 +5,18 @@ import { useWorkspace } from '@/lib/useWorkspace';
 import { Clock, ArrowDownCircle, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { buildGoLiveSelect } from '@/lib/goLive';
 
 export default function EmployeeHistoryTab({ employee, equipments }) {
   const db = useWorkspaceEntities();
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, currentWorkspace } = useWorkspace();
+  const goLiveDate = currentWorkspace?.go_live_date;
 
   const { data: sessions = [] } = useQuery({
-    queryKey: ['empSessions', workspaceId, employee.id],
+    queryKey: ['empSessions', workspaceId, goLiveDate || 'all', employee.id],
     queryFn: () => db.ActivitySession.filter({ team_id: employee.team_id }, '-date', 50),
     enabled: !!employee.team_id,
+    select: buildGoLiveSelect(goLiveDate, 'ActivitySession'),
   });
 
   const totalDescents = sessions.reduce((s, sess) => s + (sess.descidas_realizadas || 0), 0);

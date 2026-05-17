@@ -8,6 +8,7 @@ import { Edit2, Trash2, Eye, Camera, FileText, Search, Filter } from 'lucide-rea
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAppointmentServiceMutations } from '@/hooks/services/useAppointmentServiceMutations';
+import { buildGoLiveSelect } from '@/lib/goLive';
 
 const STATUS_CFG = {
   not_started:        { label: 'Não Iniciado',        color: '#718096', bg: 'rgba(113,128,150,0.12)' },
@@ -24,7 +25,8 @@ const FILTER_STATUSES = ['all', 'not_started', 'in_progress', 'photo_pending', '
 
 export default function AppointmentList({ onNew, onEdit, onDetail }) {
   const db = useWorkspaceEntities();
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, currentWorkspace } = useWorkspace();
+  const goLiveDate = currentWorkspace?.go_live_date;
   const { deleteAppointment } = useAppointmentServiceMutations();
   const [search, setSearch]         = useState('');
   const [filterStatus, setStatus]   = useState('all');
@@ -34,9 +36,10 @@ export default function AppointmentList({ onNew, onEdit, onDetail }) {
   const [showFilters, setShowFilters] = useState(false);
 
   const { data: appts = [], isLoading } = useQuery({
-    queryKey: ['appointments', workspaceId],
+    queryKey: ['appointments', workspaceId, goLiveDate || 'all'],
     queryFn: () => db.Appointment.list('-date', 100),
     enabled: !!workspaceId,
+    select: buildGoLiveSelect(goLiveDate, 'Appointment'),
   });
   const { data: contracts = [] } = useQuery({ queryKey: ['contracts', workspaceId], queryFn: () => db.Contract.list(), enabled: !!workspaceId });
   const { data: activities = [] } = useQuery({ queryKey: ['activities', workspaceId], queryFn: () => db.Activity.list(), enabled: !!workspaceId });

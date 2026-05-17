@@ -9,6 +9,7 @@ import { CheckCircle2, XCircle, Lock, Clock, AlertTriangle, ChevronDown, Chevron
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useFieldLogServiceMutations } from '@/hooks/services/useFieldLogServiceMutations';
+import { buildGoLiveSelect } from '@/lib/goLive';
 
 const APPROVAL_CONFIG = {
   pending:  { label: 'Pendente',  color: '#E87D00', bg: 'rgba(232,125,0,0.10)',   icon: Clock },
@@ -18,7 +19,8 @@ const APPROVAL_CONFIG = {
 
 export default function ApprovalPanel() {
   const db = useWorkspaceEntities();
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, currentWorkspace } = useWorkspace();
+  const goLiveDate = currentWorkspace?.go_live_date;
   const { user } = useAuth();
   const { canApproveReport } = usePermissions();
   const { approveFieldLog } = useFieldLogServiceMutations({ user });
@@ -26,9 +28,10 @@ export default function ApprovalPanel() {
   const [notes, setNotes] = useState({});
 
   const { data: logs = [], isLoading } = useQuery({
-    queryKey: ['fieldlogs', workspaceId],
+    queryKey: ['fieldlogs', workspaceId, goLiveDate || 'all'],
     queryFn: () => db.FieldLog.list('-date', 100),
     enabled: !!workspaceId,
+    select: buildGoLiveSelect(goLiveDate, 'FieldLog'),
   });
 
   const { data: contracts = [] } = useQuery({
@@ -38,9 +41,10 @@ export default function ApprovalPanel() {
   });
 
   const { data: movements = [] } = useQuery({
-    queryKey: ['material_movements', workspaceId],
+    queryKey: ['material_movements', workspaceId, goLiveDate || 'all'],
     queryFn: () => db.MaterialMovement.list('-created_date', 200),
     enabled: !!workspaceId,
+    select: buildGoLiveSelect(goLiveDate, 'MaterialMovement'),
   });
 
   const contractMap = Object.fromEntries(contracts.map(c => [c.id, c.name]));

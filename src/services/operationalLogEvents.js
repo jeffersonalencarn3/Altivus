@@ -8,6 +8,7 @@ export const OPERATIONAL_LOG_EVENTS = {
   WORKSPACE_SWITCH: 'workspace.switch',
   WORKSPACE_BLOCKED: 'workspace.blocked',
   WORKSPACE_EXPIRED: 'workspace.expired',
+  WORKSPACE_GO_LIVE_RESET: 'workspace.go_live_reset',
 
   ACTIVITY_CREATE: 'activity.create',
   ACTIVITY_UPDATE: 'activity.update',

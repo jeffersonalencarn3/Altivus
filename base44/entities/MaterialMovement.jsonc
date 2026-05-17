@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "MaterialMovement",
   "type": "object",
   "properties": {
@@ -12,7 +12,7 @@
     },
     "material_name": {
       "type": "string",
-      "description": "Nome do material no momento da movimentação"
+      "description": "Nome do material no momento da movimentaÃ§Ã£o"
     },
     "quantity": {
       "type": "number",
@@ -26,11 +26,11 @@
         "exit",
         "adjustment"
       ],
-      "description": "Tipo de movimentação de estoque"
+      "description": "Tipo de movimentaÃ§Ã£o de estoque"
     },
     "field_log_id": {
       "type": "string",
-      "description": "Diário de campo que originou a movimentação"
+      "description": "DiÃ¡rio de campo que originou a movimentaÃ§Ã£o"
     },
     "activity_id": {
       "type": "string",
@@ -42,7 +42,7 @@
     },
     "collaborator": {
       "type": "string",
-      "description": "Usuário ou colaborador responsável pela movimentação"
+      "description": "UsuÃ¡rio ou colaborador responsÃ¡vel pela movimentaÃ§Ã£o"
     },
     "notes": {
       "type": "string"
@@ -50,11 +50,19 @@
     "confirmed": {
       "type": "boolean",
       "default": false,
-      "description": "Indica se a movimentação foi aprovada/conferida"
+      "description": "Indica se a movimentaÃ§Ã£o foi aprovada/conferida"
     },
     "movement_at": {
       "type": "string",
-      "description": "Timestamp ISO da movimentação"
+      "description": "Timestamp ISO da movimentaÃ§Ã£o"
+    },
+    "is_test": {
+      "type": "boolean",
+      "default": false
+    },
+    "archived": {
+      "type": "boolean",
+      "default": false
     }
   },
   "required": [
@@ -64,3 +72,4 @@
     "type"
   ]
 }
+
