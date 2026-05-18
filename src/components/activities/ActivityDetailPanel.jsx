@@ -3,19 +3,16 @@
  * Integra: planejamento, execução (check-in/out), progresso, alertas
  */
 import React, { useState, useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { calcularPrevisao, gerarAlertas } from '@/lib/planningEngine';
 import { useMaterials, useEmployees } from '@/lib/useAppData';
 import { useOperationalExecution } from '@/lib/useOperationalExecution';
-import { useWorkspaceEntities } from '@/lib/useWorkspaceEntities';
-import { useWorkspace } from '@/lib/useWorkspace';
 import { useAuth } from '@/lib/AuthContext';
 import { usePermissions } from '@/lib/usePermissions';
+import { useActivityServiceMutations } from '@/hooks/services/useActivityServiceMutations';
 import { Button } from '@/components/ui/button';
 import {
   X, AlertTriangle, PlayCircle, StopCircle, CheckCircle2, Camera, Plus,
 } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -28,16 +25,9 @@ import OperationalMapTab from '@/components/operationalmap/OperationalMapTab';
 import AttendanceTab from '@/components/activities/AttendanceTab';
 import ActivityHistoryTab from '@/components/activities/ActivityHistoryTab';
 import GenerateReportModal from '@/components/reports/GenerateReportModal';
-import { activityService } from '@/services/activityService';
-import { invalidateGroup } from '@/services/serviceUtils';
-import { mergeEntityRecord } from '@/services/realtimeService';
-
 export default function ActivityDetailPanel({ activity, teams = [], onClose, onRefresh }) {
-  const { workspaceId } = useWorkspace();
   const { user } = useAuth();
-  const db = useWorkspaceEntities();
   const { canCheckin, canCheckout, canAddDescida, canUploadPhoto, isReadOnly } = usePermissions();
-  const qc = useQueryClient();
   const execution = useOperationalExecution(activity);
   const { sessions, attendanceRecords, activeSession, todaySession, today, metrics } = execution;
   const { data: materials = [] } = useMaterials();
@@ -49,6 +39,20 @@ export default function ActivityDetailPanel({ activity, teams = [], onClose, onR
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const { data: employees = [] } = useEmployees();
   const [activeTab, setActiveTab]           = useState('execucao');
+
+  const {
+    checkin,
+    checkout,
+    uploadDuringPhoto,
+    addDescent,
+  } = useActivityServiceMutations({
+    activity,
+    activeSession,
+    materials,
+    today,
+    user,
+    onRefresh,
+  });
 
   // Notifica outros componentes que o painel lateral está aberto
   useEffect(() => {
@@ -77,33 +81,14 @@ export default function ActivityDetailPanel({ activity, teams = [], onClose, onR
     remainingTotal,
   } = metrics;
 
-  const mergeSessionCache = (session) => {
-    mergeEntityRecord(qc, workspaceId, 'ActivitySession', session, ['activitySessions']);
-  };
-
-  const mergeActivityCache = (nextActivity) => {
-    mergeEntityRecord(qc, workspaceId, 'Activity', nextActivity, ['activities']);
-  };
-
-  const invalidate = () => {
-    invalidateGroup(qc, workspaceId, 'activities');
-    invalidateGroup(qc, workspaceId, 'materials');
-    onRefresh?.();
-  };
-
   /* ── CHECK-IN ── */
   const handleCheckin = async ({ checklist, descidas_planejadas_hoje }) => {
     if (!canCheckin) { toast.error('Sem permissão para realizar check-in'); return; }
     setLoadingAction(true);
     try {
-      const session = await activityService.checkin(db, { activity, today, checklist, descidas_planejadas_hoje, user });
-      mergeSessionCache(session);
-      if (activity.status === 'not_started') {
-        mergeActivityCache({ ...activity, status: 'in_progress' });
-      }
+      await checkin.mutateAsync({ checklist, descidas_planejadas_hoje });
       toast.success('Execução iniciada!');
       setShowCheckin(false);
-      onRefresh?.();
     } catch (e) { toast.error(e.message); }
     setLoadingAction(false);
   };
@@ -114,11 +99,7 @@ export default function ActivityDetailPanel({ activity, teams = [], onClose, onR
     if (!canCheckout) { toast.error('Sem permissão para realizar check-out'); return; }
     setLoadingAction(true);
     try {
-      const result = await activityService.checkout(db, {
-        activity,
-        activeSession,
-        materials,
-        user,
+      const result = await checkout.mutateAsync({
         checkoutData: {
           descidas_realizadas,
           observacoes,
@@ -131,27 +112,9 @@ export default function ActivityDetailPanel({ activity, teams = [], onClose, onR
           checkout_photos: checkout_photos || [],
         },
       });
-
       toast.success('Atividade finalizada!');
-      mergeSessionCache(result.session || {
-        ...activeSession,
-        descidas_realizadas,
-        observacoes,
-        status: 'finalizado',
-      });
-      mergeActivityCache(result.activity || {
-        ...activity,
-        descents_completed: (activity.descents_completed || 0) + Number(descidas_realizadas || 0),
-        progress: result.progress,
-        status: result.newStatus,
-      });
       setShowCheckout(false);
-      if ((materiais_utilizados || []).length > 0) {
-        invalidateGroup(qc, workspaceId, 'materials');
-      }
-      onRefresh?.();
-      // Se atividade chegou a 100% ou está concluída, oferecer geração de relatório
-      if (result.progress >= 100 || result.newStatus === 'completed') {
+      if (result?.progress >= 100 || result?.newStatus === 'completed') {
         setTimeout(() => setShowGenReport(true), 600);
       }
     } catch (e) { toast.error(e.message); }
@@ -165,12 +128,7 @@ export default function ActivityDetailPanel({ activity, teams = [], onClose, onR
     if (!canUploadPhoto) { toast.error('Sem permissão para enviar fotos'); return; }
     setUploadingPhoto(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      const session = await activityService.addDuringPhoto(db, { activeSession, fileUrl: file_url });
-      mergeSessionCache(session || {
-        ...activeSession,
-        fotos_durante: [...(activeSession.fotos_durante || []), file_url],
-      });
+      await uploadDuringPhoto.mutateAsync({ file });
     } catch { toast.error('Erro ao enviar foto'); }
     setUploadingPhoto(false);
   };
@@ -179,11 +137,7 @@ export default function ActivityDetailPanel({ activity, teams = [], onClose, onR
   const addDescida = async () => {
     if (!activeSession) return;
     if (!canAddDescida) { toast.error('Sem permissão'); return; }
-    const session = await activityService.addDescent(db, { activeSession });
-    mergeSessionCache(session || {
-      ...activeSession,
-      descidas_realizadas: (activeSession.descidas_realizadas || 0) + 1,
-    });
+    await addDescent.mutateAsync();
   };
 
 
@@ -421,7 +375,7 @@ export default function ActivityDetailPanel({ activity, teams = [], onClose, onR
                 style={{ background: 'linear-gradient(135deg,#00D99A,#14B8D4)', color: '#020B14' }}
                 onClick={(e) => {
                   e.stopPropagation();
-                  console.log('START_ACTIVITY_CLICK', activity?.id, workspaceId);
+                  console.log('START_ACTIVITY_CLICK', activity?.id);
                   setShowCheckin(true);
                 }}
                 disabled={loadingAction}

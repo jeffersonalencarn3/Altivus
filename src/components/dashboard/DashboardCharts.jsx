@@ -1,49 +1,70 @@
 import React from 'react';
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, CartesianGrid, Legend
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from 'recharts';
+import { addDays, format, startOfWeek, subWeeks } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const NEON = {
-  blue:   '#14B8D4',
+  blue: '#14B8D4',
   purple: '#6D56E8',
-  green:  '#00D99A',
+  green: '#00D99A',
   orange: '#E87D00',
-  red:    '#FC5252',
-};
-
-const STATUS_COLORS = {
-  not_started: '#4A5568',
-  in_progress: '#14B8D4',
-  delayed:     '#FC5252',
-  completed:   '#00D99A',
-};
-const STATUS_LABELS = {
-  not_started: 'Não Iniciado',
-  in_progress: 'Em Andamento',
-  delayed:     'Atrasado',
-  completed:   'Concluído',
+  red: '#FC5252',
 };
 
 const tooltipStyle = {
   backgroundColor: 'rgba(6,10,22,0.97)',
-  border: '1px solid rgba(20,184,212,0.2)',
-  borderRadius: 12,
+  border: '1px solid rgba(20,184,212,0.22)',
+  borderRadius: 14,
   padding: '10px 14px',
   color: '#E2E8F0',
   fontSize: 12,
-  boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+  boxShadow: '0 18px 44px rgba(0,0,0,0.58)',
 };
 
-function ChartPanel({ title, children }) {
+function safeNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+}
+
+function shortTeamName(name = '') {
+  return name.length > 11 ? `${name.slice(0, 11)}…` : name;
+}
+
+function weekStarts(count = 6) {
+  const current = startOfWeek(new Date(), { weekStartsOn: 1 });
+  return Array.from({ length: count }, (_, index) => subWeeks(current, count - 1 - index));
+}
+
+function matchesWeek(dateValue, weekStart) {
+  if (!dateValue) return false;
+  const date = new Date(`${String(dateValue).slice(0, 10)}T12:00:00`);
+  const weekEnd = addDays(weekStart, 7);
+  return date >= weekStart && date < weekEnd;
+}
+
+function ChartPanel({ title, eyebrow, children, className = '' }) {
   return (
-    <div className="rounded-2xl overflow-hidden"
+    <div className={`rounded-2xl overflow-hidden ${className}`}
       style={{
-        background: 'linear-gradient(145deg, rgba(10,16,32,0.92), rgba(6,10,22,0.96))',
-        border: '1px solid rgba(255,255,255,0.07)',
-        boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
+        background: 'linear-gradient(145deg, rgba(10,16,32,0.96), rgba(6,10,22,0.985))',
+        border: '1px solid rgba(255,255,255,0.08)',
+        boxShadow: '0 18px 46px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.03)',
       }}>
-      <div className="px-5 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+      <div className="px-4 py-3.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        {eyebrow && <p className="text-[10px] font-black uppercase tracking-[0.18em] mb-1" style={{ color: '#4A5568' }}>{eyebrow}</p>}
         <h3 className="text-sm font-bold text-white">{title}</h3>
       </div>
       <div className="p-4">
@@ -55,139 +76,183 @@ function ChartPanel({ title, children }) {
 
 function EmptyChart() {
   return (
-    <div className="h-[220px] flex items-center justify-center text-xs" style={{ color: '#4A5568' }}>
+    <div className="h-[210px] flex items-center justify-center text-xs" style={{ color: '#4A5568' }}>
       Sem dados suficientes
     </div>
   );
 }
 
-export default function DashboardCharts({ activities = [], teams = [], areas = [] }) {
-  const teamProduction = teams.map(team => {
-    const acts = activities.filter(a => a.team_id === team.id);
+export default function DashboardCharts({ activities = [], teams = [], sessions = [] }) {
+  const weeks = weekStarts(6);
+
+  const sCurve = weeks.reduce((acc, weekStart, index) => {
+    const previous = acc[index - 1] || { Previsto: 0, Realizado: 0 };
+    const plannedWeek = activities
+      .filter(activity => matchesWeek(activity.end_date || activity.start_date, weekStart))
+      .reduce((total, activity) => total + safeNumber(activity.hours_planned), 0);
+    const actualWeek = sessions
+      .filter(session => matchesWeek(session.date, weekStart))
+      .reduce((total, session) => total + safeNumber(session.tempo_total_minutos) / 60, 0);
+    acc.push({
+      week: format(weekStart, 'dd/MM', { locale: ptBR }),
+      Previsto: Math.round((previous.Previsto + plannedWeek) * 10) / 10,
+      Realizado: Math.round((previous.Realizado + actualWeek) * 10) / 10,
+    });
+    return acc;
+  }, []);
+
+  const delayTrend = weeks.map(weekStart => ({
+    week: format(weekStart, 'dd/MM', { locale: ptBR }),
+    Atrasos: activities.filter(activity =>
+      matchesWeek(activity.end_date, weekStart) &&
+      activity.status !== 'completed'
+    ).length,
+  }));
+
+  const weeklyEvolution = weeks.map(weekStart => {
+    const weekSessions = sessions.filter(session => matchesWeek(session.date, weekStart));
     return {
-      name: team.name.length > 10 ? team.name.slice(0, 10) + '…' : team.name,
-      Descidas: acts.reduce((s, a) => s + (a.descents_completed || 0), 0),
-      Horas: acts.reduce((s, a) => s + (a.hours_actual || 0), 0),
+      week: format(weekStart, 'dd/MM', { locale: ptBR }),
+      Descidas: weekSessions.reduce((total, session) => total + safeNumber(session.descidas_realizadas), 0),
+      Horas: Math.round(weekSessions.reduce((total, session) => total + safeNumber(session.tempo_total_minutos) / 60, 0) * 10) / 10,
     };
-  }).filter(t => t.Descidas > 0 || t.Horas > 0);
+  });
 
-  const statusData = ['not_started', 'in_progress', 'delayed', 'completed'].map(s => ({
-    name: STATUS_LABELS[s],
-    value: activities.filter(a => a.status === s).length,
-    color: STATUS_COLORS[s],
-  })).filter(s => s.value > 0);
-
-  const comparisonData = teams.map(team => {
-    const acts = activities.filter(a => a.team_id === team.id);
+  const teamProductivity = teams.map(team => {
+    const teamActivities = activities.filter(activity => activity.team_id === team.id);
     return {
-      name: team.name.length > 10 ? team.name.slice(0, 10) + '…' : team.name,
-      Previsto: acts.reduce((s, a) => s + (a.hours_planned || 0), 0),
-      Realizado: acts.reduce((s, a) => s + (a.hours_actual || 0), 0),
+      name: shortTeamName(team.name),
+      Descidas: teamActivities.reduce((total, activity) => total + safeNumber(activity.descents_completed), 0),
+      Eficiência: teamActivities.length
+        ? Math.round(teamActivities.reduce((total, activity) => total + safeNumber(activity.progress), 0) / teamActivities.length)
+        : 0,
     };
-  }).filter(t => t.Previsto > 0 || t.Realizado > 0);
+  }).filter(team => team.Descidas > 0 || team.Eficiência > 0);
 
-  const areaHeat = areas.map(area => {
-    const acts = activities.filter(a => a.area_id === area.id);
-    const prog = acts.length > 0 ? Math.round(acts.reduce((s, a) => s + (a.progress || 0), 0) / acts.length) : 0;
-    return { name: area.name, atividades: acts.length, progresso: prog };
-  }).filter(a => a.atividades > 0);
+  const comparison = teams.map(team => {
+    const teamActivities = activities.filter(activity => activity.team_id === team.id);
+    return {
+      name: shortTeamName(team.name),
+      Previsto: teamActivities.reduce((total, activity) => total + safeNumber(activity.hours_planned), 0),
+      Realizado: teamActivities.reduce((total, activity) => total + safeNumber(activity.hours_actual), 0),
+    };
+  }).filter(team => team.Previsto > 0 || team.Realizado > 0);
 
-  const tickStyle = { fontSize: 11, fill: '#4A5568' };
+  const lastSevenDays = Array.from({ length: 7 }, (_, index) => {
+    const date = addDays(new Date(), index - 6);
+    const key = format(date, 'yyyy-MM-dd');
+    const daySessions = sessions.filter(session => session.date === key);
+    const finalized = daySessions.filter(session => session.status === 'finalizado').length;
+    return {
+      day: format(date, 'dd/MM'),
+      Concluídas: finalized,
+      Taxa: daySessions.length ? Math.round((finalized / daySessions.length) * 100) : 0,
+    };
+  });
+
+  const tickStyle = { fontSize: 11, fill: '#718096' };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      {/* Produção por Equipe */}
-      <ChartPanel title="Produção por Equipe">
-        {teamProduction.length > 0 ? (
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={teamProduction} barGap={4}>
-              <CartesianGrid strokeDasharray="2 4" stroke="rgba(255,255,255,0.04)" vertical={false} />
+    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+      <ChartPanel title="Curva S Operacional" eyebrow="Planejamento x Execução">
+        {sCurve.some(point => point.Previsto > 0 || point.Realizado > 0) ? (
+          <ResponsiveContainer width="100%" height={210}>
+            <LineChart data={sCurve}>
+              <CartesianGrid strokeDasharray="2 4" stroke="rgba(255,255,255,0.05)" vertical={false} />
+              <XAxis dataKey="week" tick={tickStyle} axisLine={false} tickLine={false} />
+              <YAxis tick={tickStyle} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={tooltipStyle} />
+              <Line type="monotone" dataKey="Previsto" stroke={NEON.purple} strokeWidth={2.5} dot={{ r: 3 }} />
+              <Line type="monotone" dataKey="Realizado" stroke={NEON.green} strokeWidth={2.5} dot={{ r: 3 }} />
+              <Legend wrapperStyle={{ fontSize: 11, color: '#718096', paddingTop: 8 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        ) : <EmptyChart />}
+      </ChartPanel>
+
+      <ChartPanel title="Tendência de Atraso" eyebrow="Risco de SLA">
+        {delayTrend.some(point => point.Atrasos > 0) ? (
+          <ResponsiveContainer width="100%" height={210}>
+            <AreaChart data={delayTrend}>
+              <defs>
+                <linearGradient id="delayFill" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0%" stopColor={NEON.red} stopOpacity={0.34} />
+                  <stop offset="100%" stopColor={NEON.red} stopOpacity={0.02} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="2 4" stroke="rgba(255,255,255,0.05)" vertical={false} />
+              <XAxis dataKey="week" tick={tickStyle} axisLine={false} tickLine={false} />
+              <YAxis allowDecimals={false} tick={tickStyle} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={tooltipStyle} />
+              <Area type="monotone" dataKey="Atrasos" stroke={NEON.red} fill="url(#delayFill)" strokeWidth={2.5} />
+            </AreaChart>
+          </ResponsiveContainer>
+        ) : <EmptyChart />}
+      </ChartPanel>
+
+      <ChartPanel title="Produtividade por Equipe" eyebrow="Descidas x Eficiência">
+        {teamProductivity.length > 0 ? (
+          <ResponsiveContainer width="100%" height={210}>
+            <BarChart data={teamProductivity} barGap={5}>
+              <CartesianGrid strokeDasharray="2 4" stroke="rgba(255,255,255,0.05)" vertical={false} />
               <XAxis dataKey="name" tick={tickStyle} axisLine={false} tickLine={false} />
               <YAxis tick={tickStyle} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(20,184,212,0.04)' }} />
-              <Bar dataKey="Descidas" fill={NEON.blue} radius={[6, 6, 0, 0]} maxBarSize={32}
-                style={{ filter: 'drop-shadow(0 0 6px rgba(20,184,212,0.4))' }} />
-              <Bar dataKey="Horas" fill={NEON.purple} radius={[6, 6, 0, 0]} maxBarSize={32}
-                style={{ filter: 'drop-shadow(0 0 6px rgba(109,86,232,0.4))' }} />
+              <Bar dataKey="Descidas" fill={NEON.blue} radius={[6, 6, 0, 0]} maxBarSize={30}
+                style={{ filter: 'drop-shadow(0 0 7px rgba(20,184,212,0.34))' }} />
+              <Bar dataKey="Eficiência" fill={NEON.orange} radius={[6, 6, 0, 0]} maxBarSize={30} />
               <Legend wrapperStyle={{ fontSize: 11, color: '#718096', paddingTop: 8 }} />
             </BarChart>
           </ResponsiveContainer>
         ) : <EmptyChart />}
       </ChartPanel>
 
-      {/* Status das Atividades */}
-      <ChartPanel title="Status das Atividades">
-        {statusData.length > 0 ? (
-          <div className="flex items-center gap-4">
-            <ResponsiveContainer width="60%" height={220}>
-              <PieChart>
-                <Pie data={statusData} cx="50%" cy="50%" innerRadius={55} outerRadius={85}
-                  paddingAngle={3} dataKey="value" strokeWidth={0}>
-                  {statusData.map((entry, i) => (
-                    <Cell key={i} fill={entry.color}
-                      style={{ filter: `drop-shadow(0 0 8px ${entry.color}60)` }} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={tooltipStyle} />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="flex-1 space-y-2">
-              {statusData.map((s, i) => (
-                <div key={i} className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full shrink-0" style={{ background: s.color, boxShadow: `0 0 5px ${s.color}` }} />
-                    <span className="text-[11px] font-medium" style={{ color: '#A0AEC0' }}>{s.name}</span>
-                  </div>
-                  <span className="text-xs font-bold" style={{ color: s.color }}>{s.value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+      <ChartPanel title="Evolução Semanal" eyebrow="Cadência Operacional">
+        {weeklyEvolution.some(point => point.Descidas > 0 || point.Horas > 0) ? (
+          <ResponsiveContainer width="100%" height={210}>
+            <LineChart data={weeklyEvolution}>
+              <CartesianGrid strokeDasharray="2 4" stroke="rgba(255,255,255,0.05)" vertical={false} />
+              <XAxis dataKey="week" tick={tickStyle} axisLine={false} tickLine={false} />
+              <YAxis tick={tickStyle} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={tooltipStyle} />
+              <Line type="monotone" dataKey="Descidas" stroke={NEON.blue} strokeWidth={2.5} dot={{ r: 3 }} />
+              <Line type="monotone" dataKey="Horas" stroke={NEON.green} strokeWidth={2.5} dot={{ r: 3 }} />
+              <Legend wrapperStyle={{ fontSize: 11, color: '#718096', paddingTop: 8 }} />
+            </LineChart>
+          </ResponsiveContainer>
         ) : <EmptyChart />}
       </ChartPanel>
 
-      {/* Previsto vs Realizado */}
-      <ChartPanel title="Previsto vs Realizado (Horas)">
-        {comparisonData.length > 0 ? (
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={comparisonData} barGap={4}>
-              <CartesianGrid strokeDasharray="2 4" stroke="rgba(255,255,255,0.04)" vertical={false} />
+      <ChartPanel title="Previsto x Realizado" eyebrow="Horas por Equipe">
+        {comparison.length > 0 ? (
+          <ResponsiveContainer width="100%" height={210}>
+            <BarChart data={comparison} barGap={4}>
+              <CartesianGrid strokeDasharray="2 4" stroke="rgba(255,255,255,0.05)" vertical={false} />
               <XAxis dataKey="name" tick={tickStyle} axisLine={false} tickLine={false} />
               <YAxis tick={tickStyle} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(20,184,212,0.04)' }} />
-              <Bar dataKey="Previsto" fill={NEON.blue} radius={[6, 6, 0, 0]} maxBarSize={28} opacity={0.7} />
+              <Bar dataKey="Previsto" fill={NEON.purple} radius={[6, 6, 0, 0]} maxBarSize={28} opacity={0.75} />
               <Bar dataKey="Realizado" fill={NEON.green} radius={[6, 6, 0, 0]} maxBarSize={28}
-                style={{ filter: 'drop-shadow(0 0 5px rgba(0,217,154,0.4))' }} />
+                style={{ filter: 'drop-shadow(0 0 6px rgba(0,217,154,0.28))' }} />
               <Legend wrapperStyle={{ fontSize: 11, color: '#718096', paddingTop: 8 }} />
             </BarChart>
           </ResponsiveContainer>
         ) : <EmptyChart />}
       </ChartPanel>
 
-      {/* Progresso por Área */}
-      <ChartPanel title="Progresso por Área">
-        {areaHeat.length > 0 ? (
-          <div className="space-y-3 max-h-[220px] overflow-y-auto pr-1">
-            {areaHeat.map((area, i) => {
-              const color = area.progresso >= 80 ? NEON.green : area.progresso >= 50 ? NEON.blue : area.progresso >= 25 ? NEON.orange : NEON.red;
-              return (
-                <div key={i}>
-                  <div className="flex justify-between text-xs mb-1.5">
-                    <span className="font-medium text-white/80">{area.name}</span>
-                    <span className="font-bold" style={{ color }}>{area.progresso}%</span>
-                  </div>
-                  <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
-                    <div className="h-full rounded-full transition-all duration-700"
-                      style={{
-                        width: `${area.progresso}%`,
-                        background: `linear-gradient(90deg, ${color}, ${color}80)`,
-                        boxShadow: `0 0 6px ${color}50`,
-                      }} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+      <ChartPanel title="Taxa de Conclusão Diária" eyebrow="Últimos 7 dias">
+        {lastSevenDays.some(point => point.Concluídas > 0 || point.Taxa > 0) ? (
+          <ResponsiveContainer width="100%" height={210}>
+            <BarChart data={lastSevenDays}>
+              <CartesianGrid strokeDasharray="2 4" stroke="rgba(255,255,255,0.05)" vertical={false} />
+              <XAxis dataKey="day" tick={tickStyle} axisLine={false} tickLine={false} />
+              <YAxis tick={tickStyle} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={tooltipStyle} />
+              <Bar dataKey="Concluídas" fill={NEON.green} radius={[6, 6, 0, 0]} maxBarSize={24} />
+              <Bar dataKey="Taxa" fill={NEON.blue} radius={[6, 6, 0, 0]} maxBarSize={24} />
+              <Legend wrapperStyle={{ fontSize: 11, color: '#718096', paddingTop: 8 }} />
+            </BarChart>
+          </ResponsiveContainer>
         ) : <EmptyChart />}
       </ChartPanel>
     </div>

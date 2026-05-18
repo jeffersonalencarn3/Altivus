@@ -6,6 +6,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, L
 import { TrendingUp, Shield, Clock, AlertTriangle, CheckCircle2, Activity, BarChart2, Package, ArrowDown, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { buildGoLiveSelect } from '@/lib/goLive';
 
 const CHART_TT = {
   contentStyle: { background: 'rgba(8,14,28,0.97)', border: '1px solid rgba(20,184,212,0.22)', borderRadius: 12, color: '#fff' },
@@ -107,12 +108,14 @@ function RecentMovements({ movements, materials }) {
 
 export default function FieldLogDashboard() {
   const db = useWorkspaceEntities();
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, currentWorkspace } = useWorkspace();
+  const goLiveDate = currentWorkspace?.go_live_date;
 
   const { data: logs = [], isLoading } = useQuery({
-    queryKey: ['fieldlogs', workspaceId],
+    queryKey: ['fieldlogs', workspaceId, goLiveDate || 'all'],
     queryFn: () => db.FieldLog.list('-date', 100),
     enabled: !!workspaceId,
+    select: buildGoLiveSelect(goLiveDate, 'FieldLog'),
   });
   const { data: materials = [] } = useQuery({
     queryKey: ['materials', workspaceId],
@@ -120,9 +123,10 @@ export default function FieldLogDashboard() {
     enabled: !!workspaceId,
   });
   const { data: movements = [] } = useQuery({
-    queryKey: ['material_movements', workspaceId],
+    queryKey: ['material_movements', workspaceId, goLiveDate || 'all'],
     queryFn: () => db.MaterialMovement.list('-created_date', 50),
     enabled: !!workspaceId,
+    select: buildGoLiveSelect(goLiveDate, 'MaterialMovement'),
   });
   const { data: contracts = [] } = useQuery({
     queryKey: ['contracts', workspaceId],

@@ -5,6 +5,7 @@ import { useWorkspace } from '@/lib/useWorkspace';
 import { BarChart2, Clock, Shield, ClipboardCheck, FlaskConical, Award, Package } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { buildGoLiveSelect } from '@/lib/goLive';
 
 const EVENT_CFG = {
   session: { label: 'Execução Operacional', color: '#14B8D4', icon: Clock, bg: 'rgba(20,184,212,0.10)' },
@@ -17,12 +18,14 @@ const EVENT_CFG = {
 
 export default function EmployeeTimelineTab({ employee, equipments: _equipments, inspections, checklists }) {
   const db = useWorkspaceEntities();
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, currentWorkspace } = useWorkspace();
+  const goLiveDate = currentWorkspace?.go_live_date;
 
   const { data: sessions = [] } = useQuery({
-    queryKey: ['empSessions', workspaceId, employee.id],
+    queryKey: ['empSessions', workspaceId, goLiveDate || 'all', employee.id],
     queryFn: () => db.ActivitySession.filter({ team_id: employee.team_id }, '-date', 50),
     enabled: !!employee.team_id,
+    select: buildGoLiveSelect(goLiveDate, 'ActivitySession'),
   });
 
   const events = useMemo(() => {

@@ -1,5 +1,6 @@
 ﻿import { describe, expect, it } from 'vitest'
 import { activityService } from '@/services/activityService'
+import { OPERATIONAL_LOG_EVENTS } from '@/services/operationalLogService'
 import { createBase44Mock } from '@/test/mocks/base44'
 
 describe('activityService operational logs', () => {
@@ -19,7 +20,7 @@ describe('activityService operational logs', () => {
     const logs = Array.from(db.OperationalLog.rows.values())
     expect(logs).toEqual(expect.arrayContaining([
       expect.objectContaining({
-        event_type: 'activity.start',
+        event_type: OPERATIONAL_LOG_EVENTS.ACTIVITY_START,
         action: 'start_activity',
         workspace_id: 'ws-alpha',
         user_id: 'user-1',
@@ -28,7 +29,7 @@ describe('activityService operational logs', () => {
         entity_id: 'act-1',
       }),
       expect.objectContaining({
-        event_type: 'activity.checkin',
+        event_type: OPERATIONAL_LOG_EVENTS.ACTIVITY_CHECKIN,
         action: 'checkin_activity',
         workspace_id: 'ws-alpha',
         user_id: 'user-1',
@@ -53,8 +54,8 @@ describe('activityService operational logs', () => {
 
     const logs = Array.from(db.OperationalLog.rows.values())
     expect(logs).toEqual(expect.arrayContaining([
-      expect.objectContaining({ event_type: 'activity.finish', action: 'finish_activity', user_id: 'user-1', entity_type: 'Activity' }),
-      expect.objectContaining({ event_type: 'activity.checkout', action: 'checkout_activity', user_id: 'user-1', entity_type: 'ActivitySession' }),
+      expect.objectContaining({ event_type: OPERATIONAL_LOG_EVENTS.ACTIVITY_FINISH, action: 'finish_activity', user_id: 'user-1', entity_type: 'Activity' }),
+      expect.objectContaining({ event_type: OPERATIONAL_LOG_EVENTS.ACTIVITY_CHECKOUT, action: 'checkout_activity', user_id: 'user-1', entity_type: 'ActivitySession' }),
     ]))
   })
 })

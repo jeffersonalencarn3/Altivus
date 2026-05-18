@@ -1,11 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useWorkspaceEntities } from '@/lib/useWorkspaceEntities';
-import { useWorkspace } from '@/lib/useWorkspace';
-import { useAuth } from '@/lib/AuthContext';
 import { useActivitySessions } from '@/lib/useAppData';
 import { useMaterials } from '@/lib/useAppData';
-import { base44 } from '@/api/base44Client';
+import { useActivityServiceMutations } from '@/hooks/services/useActivityServiceMutations';
 import CheckinModal from './CheckinModal';
 import CheckoutModal from './CheckoutModal';
 import ExecutionTimer from './ExecutionTimer';
@@ -14,20 +10,12 @@ import { Button } from '@/components/ui/button';
 import { Camera, PlayCircle, StopCircle, CheckCircle2, Plus, BarChart2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { activityService } from '@/services/activityService';
-import { invalidateGroup } from '@/services/serviceUtils';
-import { mergeEntityRecord } from '@/services/realtimeService';
 
 export default function ActivityExecutionPanel({ activity, team }) {
-  const db = useWorkspaceEntities();
-  const { workspaceId } = useWorkspace();
-  const { user } = useAuth();
-  const qc = useQueryClient();
   const { data: sessions = [] } = useActivitySessions(activity?.id);
   const { data: materials = [] } = useMaterials();
   const [showCheckin, setShowCheckin] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
-  const [uploadingDuring, setUploadingDuring] = useState(false);
   const [showVisualHistory, setShowVisualHistory] = useState(false);
   const duringRef = useRef();
 
@@ -35,96 +23,48 @@ export default function ActivityExecutionPanel({ activity, team }) {
   const activeSession = sessions.find(s => s.status === 'em_execucao');
   const todaySession = sessions.find(s => s.date === today && s.team_id === activity?.team_id);
 
-  const invalidate = () => {
-    invalidateGroup(qc, workspaceId, 'activities');
-    invalidateGroup(qc, workspaceId, 'materials');
-  };
-
-  const mergeSessionCache = (session) => {
-    mergeEntityRecord(qc, workspaceId, 'ActivitySession', session, ['activitySessions']);
-  };
-
-  const mergeActivityCache = (nextActivity) => {
-    mergeEntityRecord(qc, workspaceId, 'Activity', nextActivity, ['activities']);
-  };
-
-  const checkinMut = useMutation({
-    mutationFn: ({ checklist, visual_checkin_map }) => activityService.checkin(db, {
-      activity,
-      today,
-      checklist,
-      visual_checkin_map: visual_checkin_map || null,
-      user,
-    }),
-    onSuccess: (session) => {
-      mergeSessionCache(session);
-      if (activity.status === 'not_started') {
-        mergeActivityCache({ ...activity, status: 'in_progress' });
-      }
-      invalidate();
-      setShowCheckin(false);
-    },
+  const {
+    checkin: checkinMut,
+    checkout: checkoutMut,
+    uploadDuringPhoto,
+    addDescent: addDescentMut,
+  } = useActivityServiceMutations({
+    activity,
+    activeSession,
+    materials,
+    today,
   });
 
-  const checkoutMut = useMutation({
-    mutationFn: ({ descidas_realizadas, observacoes, checklist_fim, materiais_utilizados, fotos_depois, visual_checkout_map, executed_area, execution_status, execution_justificativa, checkout_photos }) => activityService.checkout(db, {
-      activity,
-      activeSession,
-      materials,
-      user,
+  const handleCheckin = (payload) => {
+    checkinMut.mutate(payload, {
+      onSuccess: () => setShowCheckin(false),
+    });
+  };
+
+  const handleCheckout = (payload) => {
+    checkoutMut.mutate({
       checkoutData: {
-        descidas_realizadas,
-        observacoes,
-        checklist_fim,
-        materiais_utilizados,
-        fotos_depois,
-        visual_checkout_map: visual_checkout_map || null,
-        // Novos campos adicionais
-        executed_area: executed_area || null,
-        execution_status: execution_status || null,
-        execution_justificativa: execution_justificativa || null,
-        checkout_photos: checkout_photos || [],
+        ...payload,
+        visual_checkout_map: payload.visual_checkout_map || null,
+        executed_area: payload.executed_area || null,
+        execution_status: payload.execution_status || null,
+        execution_justificativa: payload.execution_justificativa || null,
+        checkout_photos: payload.checkout_photos || [],
       },
-    }),
-    onSuccess: (result, variables) => {
-      mergeSessionCache(result?.session || {
-        ...activeSession,
-        descidas_realizadas: variables?.descidas_realizadas,
-        status: 'finalizado',
-      });
-      mergeActivityCache(result?.activity || {
-        ...activity,
-        descents_completed: (activity.descents_completed || 0) + Number(variables?.descidas_realizadas || 0),
-        progress: result?.progress,
-        status: result?.newStatus,
-      });
-      invalidate();
-      setShowCheckout(false);
-    },
-  });
+    }, {
+      onSuccess: () => setShowCheckout(false),
+    });
+  };
 
-  const addDuringPhoto = async (e) => {
+  const addDuringPhoto = (e) => {
     const file = e.target.files?.[0];
     if (!file || !activeSession) return;
-    setUploadingDuring(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    const session = await activityService.addDuringPhoto(db, { activeSession, fileUrl: file_url });
-    mergeSessionCache(session || {
-      ...activeSession,
-      fotos_durante: [...(activeSession.fotos_durante || []), file_url],
-    });
-    invalidate();
-    setUploadingDuring(false);
+    uploadDuringPhoto.mutate({ file });
   };
 
-  const addDescida = async () => {
+  const addDescida = () => {
     if (!activeSession) return;
-    const session = await activityService.addDescent(db, { activeSession });
-    mergeSessionCache(session || {
-      ...activeSession,
-      descidas_realizadas: (activeSession.descidas_realizadas || 0) + 1,
-    });
-    invalidate();
+    addDescentMut.mutate();
   };
 
   const pastSessions = sessions.filter(s => s.status === 'finalizado').slice(0, 5);
@@ -168,11 +108,11 @@ export default function ActivityExecutionPanel({ activity, team }) {
               <>
                 {/* Foto durante */}
                 <button onClick={() => duringRef.current?.click()}
-                  disabled={uploadingDuring}
+                  disabled={uploadDuringPhoto.isPending}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
                   style={{ background: 'rgba(109,86,232,0.12)', border: '1px solid rgba(109,86,232,0.30)', color: '#6D56E8' }}>
                   <Camera className="w-3.5 h-3.5" />
-                  {uploadingDuring ? 'Enviando...' : 'Foto'}
+                  {uploadDuringPhoto.isPending ? 'Enviando...' : 'Foto'}
                 </button>
                 <input ref={duringRef} type="file" accept="image/*" className="hidden" onChange={addDuringPhoto} />
 
@@ -264,7 +204,7 @@ export default function ActivityExecutionPanel({ activity, team }) {
       <CheckinModal
         open={showCheckin}
         onClose={() => setShowCheckin(false)}
-        onConfirm={checkinMut.mutate}
+        onConfirm={handleCheckin}
         activity={activity}
         team={team}
         alreadyStarted={!!todaySession}
@@ -273,7 +213,7 @@ export default function ActivityExecutionPanel({ activity, team }) {
       <CheckoutModal
         open={showCheckout}
         onClose={() => setShowCheckout(false)}
-        onConfirm={checkoutMut.mutate}
+        onConfirm={handleCheckout}
         session={activeSession}
         activity={activity}
         materials={materials}

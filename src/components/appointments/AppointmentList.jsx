@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useWorkspaceEntities } from '@/lib/useWorkspaceEntities';
 import { useWorkspace } from '@/lib/useWorkspace';
 import { Button } from '@/components/ui/button';
@@ -7,8 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Edit2, Trash2, Eye, Camera, FileText, Search, Filter } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { appointmentService } from '@/services/appointmentService';
-import { invalidateGroup } from '@/services/serviceUtils';
+import { useAppointmentServiceMutations } from '@/hooks/services/useAppointmentServiceMutations';
+import { buildGoLiveSelect } from '@/lib/goLive';
 
 const STATUS_CFG = {
   not_started:        { label: 'Não Iniciado',        color: '#718096', bg: 'rgba(113,128,150,0.12)' },
@@ -24,9 +24,10 @@ const STATUS_CFG = {
 const FILTER_STATUSES = ['all', 'not_started', 'in_progress', 'photo_pending', 'executing', 'report_pending', 'awaiting_approval', 'approved', 'rejected'];
 
 export default function AppointmentList({ onNew, onEdit, onDetail }) {
-  const qc = useQueryClient();
   const db = useWorkspaceEntities();
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, currentWorkspace } = useWorkspace();
+  const goLiveDate = currentWorkspace?.go_live_date;
+  const { deleteAppointment } = useAppointmentServiceMutations();
   const [search, setSearch]         = useState('');
   const [filterStatus, setStatus]   = useState('all');
   const [filterDate, setDate]       = useState('');
@@ -35,18 +36,14 @@ export default function AppointmentList({ onNew, onEdit, onDetail }) {
   const [showFilters, setShowFilters] = useState(false);
 
   const { data: appts = [], isLoading } = useQuery({
-    queryKey: ['appointments', workspaceId],
+    queryKey: ['appointments', workspaceId, goLiveDate || 'all'],
     queryFn: () => db.Appointment.list('-date', 100),
     enabled: !!workspaceId,
+    select: buildGoLiveSelect(goLiveDate, 'Appointment'),
   });
   const { data: contracts = [] } = useQuery({ queryKey: ['contracts', workspaceId], queryFn: () => db.Contract.list(), enabled: !!workspaceId });
   const { data: activities = [] } = useQuery({ queryKey: ['activities', workspaceId], queryFn: () => db.Activity.list(), enabled: !!workspaceId });
   const { data: employees = [] } = useQuery({ queryKey: ['employees', workspaceId], queryFn: () => db.Employee.list(), enabled: !!workspaceId });
-
-  const deleteMut = useMutation({
-    mutationFn: id => appointmentService.deleteAppointment(db, id),
-    onSuccess: () => invalidateGroup(qc, workspaceId, 'appointments'),
-  });
 
   const contractMap  = Object.fromEntries(contracts.map(c => [c.id, c.name]));
   const activityMap  = Object.fromEntries(activities.map(a => [a.id, a.title]));
@@ -189,7 +186,7 @@ export default function AppointmentList({ onNew, onEdit, onDetail }) {
                   <div className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()}>
                     <Button size="icon" variant="ghost" onClick={() => onDetail(a)} className="w-8 h-8"><Eye className="w-3.5 h-3.5" /></Button>
                     {!a.locked && <Button size="icon" variant="ghost" onClick={() => onEdit(a)} className="w-8 h-8"><Edit2 className="w-3.5 h-3.5" /></Button>}
-                    {!a.locked && <Button size="icon" variant="ghost" onClick={() => { if (confirm('Excluir?')) deleteMut.mutate(a.id); }} className="w-8 h-8 text-red-400 hover:text-red-300"><Trash2 className="w-3.5 h-3.5" /></Button>}
+                    {!a.locked && <Button size="icon" variant="ghost" onClick={() => { if (confirm('Excluir?')) deleteAppointment.mutate({ id: a.id }); }} className="w-8 h-8 text-red-400 hover:text-red-300"><Trash2 className="w-3.5 h-3.5" /></Button>}
                   </div>
                 </div>
               </div>

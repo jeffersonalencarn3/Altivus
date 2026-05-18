@@ -1,7 +1,9 @@
+import { base44 } from '@/api/base44Client';
 import { calcularPlano } from '@/lib/planningEngine';
 import { ensureAllowed, runService } from '@/services/serviceUtils';
 import { materialService } from '@/services/materialService';
 import { operationalLogService } from '@/services/operationalLogService';
+export const ACTIVITY_SERVICE_DOMAIN = 'activity';
 
 function formatHour(iso) {
   return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -261,41 +263,23 @@ export const activityService = {
       if (activity.status === 'not_started') {
         await db.Activity.update(activity.id, { status: 'in_progress' });
       }
-      await operationalLogService.recordBatch(db, [
-        {
-          workspace_id: activity.workspace_id || '',
-          source: 'service',
-          category: 'activity',
-          event_type: 'activity.start',
-          action: 'start_activity',
-          description: `Atividade iniciada: ${activity.title || activity.id}`,
-          entity_type: 'Activity',
-          entity_id: activity.id,
-          activity_id: activity.id,
-          team_id: activity.team_id,
-          contract_id: activity.contract_id,
-          user,
-          metadata: { planned_descents_today: descidas_planejadas_hoje, session_id: session.id },
-          analytics_tags: ['activity', 'execution', 'sla'],
-        },
-        {
-          workspace_id: activity.workspace_id || '',
-          source: 'service',
-          category: 'activity',
-          event_type: 'activity.checkin',
-          action: 'checkin_activity',
-          description: `Check-in realizado: ${activity.title || activity.id}`,
-          entity_type: 'ActivitySession',
-          entity_id: session.id,
-          activity_id: activity.id,
-          team_id: activity.team_id,
-          contract_id: activity.contract_id,
-          user,
-          after: session,
-          metadata: { planned_descents_today: descidas_planejadas_hoje },
-          analytics_tags: ['activity', 'execution', 'sla'],
-        },
-      ]);
+      const executionMeta = { planned_descents_today: descidas_planejadas_hoje, session_id: session.id };
+      await operationalLogService.recordActivityExecution(db, {
+        workspaceId: activity.workspace_id,
+        activity,
+        user,
+        phase: 'start',
+        metadata: executionMeta,
+      });
+      await operationalLogService.recordActivityExecution(db, {
+        workspaceId: activity.workspace_id,
+        activity,
+        session,
+        user,
+        phase: 'checkin',
+        after: session,
+        metadata: { planned_descents_today: descidas_planejadas_hoje },
+      });
       return session;
     }, 'Erro ao iniciar atividade');
   },
@@ -341,53 +325,30 @@ export const activityService = {
         });
       }
 
-      await operationalLogService.recordBatch(db, [
-        {
-          workspace_id: activity.workspace_id || '',
-          source: 'service',
-          category: 'activity',
-          event_type: 'activity.finish',
-          action: 'finish_activity',
-          description: `Atividade finalizada: ${activity.title || activity.id}`,
-          entity_type: 'Activity',
-          entity_id: activity.id,
-          activity_id: activity.id,
-          team_id: activity.team_id,
-          contract_id: activity.contract_id,
-          user,
-          metadata: {
-            descents_done: descentsDone,
-            progress,
-            new_status: newStatus,
-            elapsed_minutes: minutos,
-            session_id: session.id,
-          },
-          analytics_tags: ['activity', 'execution', 'sla'],
-        },
-        {
-          workspace_id: activity.workspace_id || '',
-          source: 'service',
-          category: 'activity',
-          event_type: 'activity.checkout',
-          action: 'checkout_activity',
-          description: `Check-out realizado: ${activity.title || activity.id}`,
-          entity_type: 'ActivitySession',
-          entity_id: session.id,
-          activity_id: activity.id,
-          team_id: activity.team_id,
-          contract_id: activity.contract_id,
-          user,
-          before: activeSession,
-          after: session,
-          metadata: {
-            descents_done: descentsDone,
-            progress,
-            new_status: newStatus,
-            elapsed_minutes: minutos,
-          },
-          analytics_tags: ['activity', 'execution', 'sla'],
-        },
-      ]);
+      const checkoutMeta = {
+        descents_done: descentsDone,
+        progress,
+        new_status: newStatus,
+        elapsed_minutes: minutos,
+        session_id: session.id,
+      };
+      await operationalLogService.recordActivityExecution(db, {
+        workspaceId: activity.workspace_id,
+        activity,
+        user,
+        phase: 'finish',
+        metadata: checkoutMeta,
+      });
+      await operationalLogService.recordActivityExecution(db, {
+        workspaceId: activity.workspace_id,
+        activity,
+        session,
+        user,
+        phase: 'checkout',
+        before: activeSession,
+        after: session,
+        metadata: checkoutMeta,
+      });
       return { progress, newStatus, session, activity: updatedActivity };
     }, 'Erro ao finalizar atividade');
   },
@@ -402,6 +363,16 @@ export const activityService = {
     return runService(() => db.ActivitySession.update(activeSession.id, {
       fotos_durante: [...(activeSession.fotos_durante || []), fileUrl],
     }), 'Erro ao adicionar foto');
+  },
+
+  uploadDuringPhoto(db, { activeSession, file, uploader }) {
+    return runService(async () => {
+      ensureAllowed(activeSession?.id, 'Sessão ativa não encontrada');
+      ensureAllowed(file, 'Arquivo inválido');
+      const upload = uploader || ((payload) => base44.integrations.Core.UploadFile(payload));
+      const { file_url } = await upload({ file });
+      return activityService.addDuringPhoto(db, { activeSession, fileUrl: file_url });
+    }, 'Erro ao enviar foto');
   },
 
   updatePlanningTeam(db, { activity, area, numAlpinistas }) {
@@ -461,6 +432,7 @@ export const activityService = {
         audit_log: [],
       })));
       await operationalLogService.record(db, {
+        workspace_id: workspaceId,
         source: 'service',
         category: 'attendance',
         event_type: 'attendance.team_loaded',
@@ -502,6 +474,7 @@ export const activityService = {
         audit_trail: [...(activity.audit_trail || []), logEntry],
       });
       await operationalLogService.record(db, {
+        workspace_id: workspaceId,
         source: 'service',
         category: 'attendance',
         event_type: 'attendance.record',
@@ -577,6 +550,7 @@ export const activityService = {
         }],
       });
       await operationalLogService.record(db, {
+        workspace_id: workspaceId,
         source: 'service',
         category: 'attendance',
         event_type: 'attendance.collaborator_added',
@@ -610,6 +584,7 @@ export const activityService = {
         }],
       });
       await operationalLogService.record(db, {
+        workspace_id: activity.workspace_id || '',
         source: 'service',
         category: 'attendance',
         event_type: 'attendance.collaborator_removed',

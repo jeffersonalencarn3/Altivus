@@ -91,20 +91,10 @@ export function WorkspaceProvider({ children }) {
       base44.entities.WorkspaceMember.update(m.id, { last_seen_at: new Date().toISOString() }).catch(() => {});
     }
     if (previousWorkspaceId && previousWorkspaceId !== wsId) {
-      operationalLogService.record(base44.entities, {
-        workspace_id: wsId,
-        event_type: 'workspace.switch',
-        category: 'workspace',
-        action: 'switch_workspace',
-        severity: 'info',
-        description: 'Workspace ativo alterado',
-        entity_type: 'Workspace',
-        entity_id: wsId,
+      operationalLogService.recordWorkspaceSwitch(base44.entities, {
+        workspaceId: wsId,
+        previousWorkspaceId,
         user,
-        before: { workspace_id: previousWorkspaceId },
-        after: { workspace_id: wsId },
-        source: 'web',
-        analytics_tags: ['workspace', 'multi_tenant'],
       });
     }
   }, [currentWorkspaceId, memberships, activateWorkspace, user]);

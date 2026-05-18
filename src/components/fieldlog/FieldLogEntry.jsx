@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useWorkspaceEntities } from '@/lib/useWorkspaceEntities';
 import { useWorkspace } from '@/lib/useWorkspace';
+import { useFieldLogServiceMutations } from '@/hooks/services/useFieldLogServiceMutations';
 import { Button } from '@/components/ui/button';
 import StepWorkdayStart from './steps/StepWorkdayStart';
 import StepActivities from './steps/StepActivities';
 import StepCloseDay from './steps/StepCloseDay';
 import { Save, ChevronRight, ChevronLeft, CheckCircle2, AlertTriangle } from 'lucide-react';
-import { fieldLogService } from '@/services/fieldLogService';
-import { invalidateGroup } from '@/services/serviceUtils';
 
 const STEPS = [
   { id: 'start',      label: 'Início',      emoji: '🌅' },
@@ -33,9 +32,9 @@ const defaultLog = {
 };
 
 export default function FieldLogEntry({ log, onSaved, onCancel }) {
-  const qc = useQueryClient();
   const db = useWorkspaceEntities();
   const { workspaceId } = useWorkspace();
+  const { saveFieldLog, validateClose } = useFieldLogServiceMutations();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState(log ? { ...log } : { ...defaultLog });
   const [error, setError] = useState(null);
@@ -63,37 +62,25 @@ export default function FieldLogEntry({ log, onSaved, onCancel }) {
   const patch = (updates) => setForm(f => ({ ...f, ...updates }));
 
   // ── Validations before close ──────────────────────────────────
-  const validateClose = () => {
-    return fieldLogService.validateClose(form, { materials, contracts });
-  };
-
-  // ── Save mutation ─────────────────────────────────────────────
-  const saveMutation = useMutation({
-    mutationFn: ({ data, isClose }) => fieldLogService.saveFieldLog(db, {
-      data,
-      isClose,
-      user,
-      materials,
-      contracts,
-    }),
-    onSuccess: () => {
-      invalidateGroup(qc, workspaceId, 'fieldLogs');
-      onSaved();
-    },
-    onError: (err) => setError(err.message),
-  });
+  const handleValidateClose = () => validateClose(form, { materials, contracts });
 
   const handleSave = (status = form.status) => {
     setError(null);
-    saveMutation.mutate({ data: { ...form, status }, isClose: false });
+    saveFieldLog.mutate({ data: { ...form, status }, isClose: false, materials, contracts }, {
+      onSuccess: onSaved,
+      onError: (_, message) => setError(message),
+    });
   };
 
   const handleClose = () => {
     setError(null);
-    const err = validateClose();
+    const err = handleValidateClose();
     if (err) { setError(err); return; }
     const canClose = form.nr35_completed && form.anchor_verified && form.ppe_inspected && form.supervisor_confirmed;
-    saveMutation.mutate({ data: { ...form, status: canClose ? 'closed' : 'open' }, isClose: canClose });
+    saveFieldLog.mutate({ data: { ...form, status: canClose ? 'closed' : 'open' }, isClose: canClose, materials, contracts }, {
+      onSuccess: onSaved,
+      onError: (_, message) => setError(message),
+    });
   };
 
   const isLocked = form.locked || form.approval_status === 'approved';
@@ -168,7 +155,7 @@ export default function FieldLogEntry({ log, onSaved, onCancel }) {
 
         <div className="flex gap-2">
           {!isLocked && (
-            <Button variant="secondary" onClick={() => handleSave('draft')} disabled={saveMutation.isPending}>
+            <Button variant="secondary" onClick={() => handleSave('draft')} disabled={saveFieldLog.isPending}>
               <Save className="w-4 h-4 mr-1.5" /> Rascunho
             </Button>
           )}
@@ -180,13 +167,13 @@ export default function FieldLogEntry({ log, onSaved, onCancel }) {
             !isLocked && (
               <Button
                 onClick={handleClose}
-                disabled={saveMutation.isPending}
+                disabled={saveFieldLog.isPending}
                 style={canClose ? {
                   background: 'linear-gradient(135deg, #00D99A, #14B8D4)',
                   color: '#020B0F', fontWeight: 700,
                 } : {}}
               >
-                {saveMutation.isPending ? 'Salvando...' : canClose ? '🔒 Encerrar Dia' : '💾 Salvar em Aberto'}
+                {saveFieldLog.isPending ? 'Salvando...' : canClose ? '🔒 Encerrar Dia' : '💾 Salvar em Aberto'}
               </Button>
             )
           )}

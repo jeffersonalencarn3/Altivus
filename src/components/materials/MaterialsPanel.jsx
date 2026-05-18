@@ -1,15 +1,11 @@
 import React, { useState } from 'react';
-import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { useActivityMaterials, useMaterials } from '@/lib/useAppData';
-import { useWorkspaceEntities } from '@/lib/useWorkspaceEntities';
-import { useWorkspace } from '@/lib/useWorkspace';
+import { useMaterialServiceMutations } from '@/hooks/services/useMaterialServiceMutations';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, AlertTriangle, Package } from 'lucide-react';
-import { materialService } from '@/services/materialService';
-import { invalidateGroup } from '@/services/serviceUtils';
 
 const TYPE_LABELS = { epi: 'EPI', ferramenta: 'Ferramenta', consumivel: 'Consumível' };
 const TYPE_COLORS = {
@@ -19,38 +15,15 @@ const TYPE_COLORS = {
 };
 
 export default function MaterialsPanel({ activityId }) {
-  const qc = useQueryClient();
-  const db = useWorkspaceEntities();
-  const { workspaceId } = useWorkspace();
   const { data: usedMaterials = [] } = useActivityMaterials(activityId);
   const { data: allMaterials = [] } = useMaterials();
+  const { addToActivity, removeFromActivity } = useMaterialServiceMutations();
 
   const [selectedMaterialId, setSelectedMaterialId] = useState('');
   const [qty, setQty] = useState('');
   const [error, setError] = useState('');
 
   const selectedMaterial = allMaterials.find(m => m.id === selectedMaterialId);
-
-  const addMutation = useMutation({
-    mutationFn: async ({ materialId, quantity }) => {
-      const material = allMaterials.find(m => m.id === materialId);
-      return materialService.addToActivity(db, { activityId, material, quantity });
-    },
-    onSuccess: () => {
-      invalidateGroup(qc, workspaceId, 'materials');
-      setSelectedMaterialId('');
-      setQty('');
-      setError('');
-    },
-    onError: (e) => setError(e.message),
-  });
-
-  const removeMutation = useMutation({
-    mutationFn: (record) => materialService.removeFromActivity(db, record),
-    onSuccess: () => {
-      invalidateGroup(qc, workspaceId, 'materials');
-    },
-  });
 
   const handleAdd = () => {
     setError('');
@@ -63,7 +36,15 @@ export default function MaterialsPanel({ activityId }) {
       setError(`Estoque insuficiente. Disponível: ${selectedMaterial.quantity_available} ${selectedMaterial.unit}`);
       return;
     }
-    addMutation.mutate({ materialId: selectedMaterialId, quantity });
+    const material = allMaterials.find(m => m.id === selectedMaterialId);
+    addToActivity.mutate({ activityId, material, quantity }, {
+      onSuccess: () => {
+        setSelectedMaterialId('');
+        setQty('');
+        setError('');
+      },
+      onError: (_, message) => setError(message),
+    });
   };
 
   const getMaterialInfo = (materialId) => allMaterials.find(m => m.id === materialId);
@@ -108,7 +89,7 @@ export default function MaterialsPanel({ activityId }) {
           onChange={e => setQty(e.target.value)}
           className="w-24 h-9 text-xs"
         />
-        <Button size="sm" className="h-9" onClick={handleAdd} disabled={addMutation.isPending}>
+        <Button size="sm" className="h-9" onClick={handleAdd} disabled={addToActivity.isPending}>
           <Plus className="w-4 h-4 mr-1" /> Adicionar
         </Button>
       </div>
@@ -151,7 +132,7 @@ export default function MaterialsPanel({ activityId }) {
                     variant="ghost"
                     size="icon"
                     className="h-6 w-6 text-destructive"
-                    onClick={() => removeMutation.mutate(record)}
+                    onClick={() => removeFromActivity.mutate(record)}
                     disabled={removeMutation.isPending}
                   >
                     <Trash2 className="w-3 h-3" />
