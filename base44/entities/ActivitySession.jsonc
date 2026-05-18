@@ -158,6 +158,14 @@
       "items": {
         "type": "string"
       }
+    },
+    "is_test": {
+      "type": "boolean",
+      "default": false
+    },
+    "archived": {
+      "type": "boolean",
+      "default": false
     }
   },
   "required": [

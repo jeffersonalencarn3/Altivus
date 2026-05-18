@@ -42,6 +42,18 @@
     },
     "description": {
       "type": "string"
+    },
+    "total_descidas_previstas": {
+      "type": "number",
+      "default": 0
+    },
+    "total_descidas_executadas": {
+      "type": "number",
+      "default": 0
+    },
+    "progresso_descidas": {
+      "type": "number",
+      "default": 0
     }
   },
   "required": [

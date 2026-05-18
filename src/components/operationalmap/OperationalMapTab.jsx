@@ -13,11 +13,13 @@ import {
 import { toast } from 'sonner';
 import { operationalMapService } from '@/services/operationalMapService';
 import { invalidateWorkspaceQueries } from '@/services/serviceUtils';
+import { buildGoLiveSelect } from '@/lib/goLive';
 
 const ACCEPTED_FORMATS = ['image/png', 'image/jpeg', 'image/webp', 'application/pdf'];
 
 export default function OperationalMapTab({ activity }) {
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, currentWorkspace } = useWorkspace();
+  const goLiveDate = currentWorkspace?.go_live_date;
   const db = useWorkspaceEntities();
   const qc = useQueryClient();
   const fileInputRef = useRef(null);
@@ -29,17 +31,18 @@ export default function OperationalMapTab({ activity }) {
 
   // Busca mapas operacionais da atividade
   const { data: maps = [] } = useQuery({
-    queryKey: ['operationalMaps', workspaceId, activity?.id],
+    queryKey: ['operationalMaps', workspaceId, goLiveDate || 'all', activity?.id],
     queryFn: () => activity?.id
       ? db.OperationalMap.filter({ activity_id: activity.id })
       : Promise.resolve([]),
     enabled: !!workspaceId && !!activity?.id,
+    select: buildGoLiveSelect(goLiveDate, 'OperationalMap'),
   });
 
   const createMapMut = useMutation({
     mutationFn: (data) => operationalMapService.createMap(db, data),
     onSuccess: () => {
-      invalidateWorkspaceQueries(qc, workspaceId, [['operationalMaps', workspaceId, activity?.id]]);
+      invalidateWorkspaceQueries(qc, workspaceId, [['operationalMaps', workspaceId]]);
       toast.success('Mapa operacional criado!');
     },
     onError: (e) => toast.error(e.message),
@@ -48,7 +51,7 @@ export default function OperationalMapTab({ activity }) {
   const updateMapMut = useMutation({
     mutationFn: ({ id, data }) => operationalMapService.updateMap(db, id, data),
     onSuccess: () => {
-      invalidateWorkspaceQueries(qc, workspaceId, [['operationalMaps', workspaceId, activity?.id]]);
+      invalidateWorkspaceQueries(qc, workspaceId, [['operationalMaps', workspaceId]]);
       toast.success('Mapa atualizado!');
     },
     onError: (e) => toast.error(e.message),
@@ -57,7 +60,7 @@ export default function OperationalMapTab({ activity }) {
   const deleteMapMut = useMutation({
     mutationFn: (id) => operationalMapService.deleteMap(db, id),
     onSuccess: () => {
-      invalidateWorkspaceQueries(qc, workspaceId, [['operationalMaps', workspaceId, activity?.id]]);
+      invalidateWorkspaceQueries(qc, workspaceId, [['operationalMaps', workspaceId]]);
       toast.success('Mapa removido!');
     },
     onError: (e) => toast.error(e.message),

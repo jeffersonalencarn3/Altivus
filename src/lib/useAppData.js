@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useWorkspace } from '@/lib/useWorkspace';
 import { createWorkspaceClient } from '@/lib/workspaceClient';
 import { operationalLogService } from '@/services/operationalLogService';
+import { buildGoLiveSelect } from '@/lib/goLive';
 
 /**
  * useDB — memoizado por workspaceId para evitar recriar o cliente a cada render.
@@ -66,8 +67,14 @@ export function useEmployees() {
 
 export function useActivities() {
   const db = useDB();
-  const { workspaceId } = useWorkspace();
-  return useQuery({ queryKey: ['activities', workspaceId], queryFn: () => db.Activity.list(), ...baseOpts(workspaceId) });
+  const { workspaceId, currentWorkspace } = useWorkspace();
+  const goLiveDate = currentWorkspace?.go_live_date;
+  return useQuery({
+    queryKey: ['activities', workspaceId, goLiveDate || 'all'],
+    queryFn: () => db.Activity.list(),
+    ...baseOpts(workspaceId),
+    select: buildGoLiveSelect(goLiveDate, 'Activity'),
+  });
 }
 
 export function useServiceTypes() {
@@ -121,42 +128,48 @@ export function useActivityEmployees(activityId) {
 
 export function useActivitySessions(activityId) {
   const db = useDB();
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, currentWorkspace } = useWorkspace();
+  const goLiveDate = currentWorkspace?.go_live_date;
   const listAll = activityId === null;
   return useQuery({
-    queryKey: ['activitySessions', workspaceId, listAll ? 'all' : activityId],
+    queryKey: ['activitySessions', workspaceId, goLiveDate || 'all', listAll ? 'all' : activityId],
     queryFn: () => listAll
       ? db.ActivitySession.list('-date', 50)
       : db.ActivitySession.filter({ activity_id: activityId }, '-date', 50),
     ...baseOpts(workspaceId),
+    select: buildGoLiveSelect(goLiveDate, 'ActivitySession'),
     enabled: !!workspaceId && (listAll || !!activityId),
   });
 }
 
 export function useAttendanceRecords(activityId) {
   const db = useDB();
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, currentWorkspace } = useWorkspace();
+  const goLiveDate = currentWorkspace?.go_live_date;
   const listAll = activityId === null;
   return useQuery({
-    queryKey: ['attendanceRecords', workspaceId, listAll ? 'all' : activityId],
+    queryKey: ['attendanceRecords', workspaceId, goLiveDate || 'all', listAll ? 'all' : activityId],
     queryFn: () => listAll
       ? db.AttendanceRecord.list('-date', 200)
       : db.AttendanceRecord.filter({ activity_id: activityId }),
     ...baseOpts(workspaceId),
+    select: buildGoLiveSelect(goLiveDate, 'AttendanceRecord'),
     enabled: !!workspaceId && (listAll || !!activityId),
   });
 }
 
 export function useOperationalMaps(activityId) {
   const db = useDB();
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, currentWorkspace } = useWorkspace();
+  const goLiveDate = currentWorkspace?.go_live_date;
   const listAll = activityId === null;
   return useQuery({
-    queryKey: ['operationalMaps', workspaceId, listAll ? 'all' : activityId],
+    queryKey: ['operationalMaps', workspaceId, goLiveDate || 'all', listAll ? 'all' : activityId],
     queryFn: () => listAll
       ? db.OperationalMap.list('-captured_at', 100)
       : db.OperationalMap.filter({ activity_id: activityId }, '-captured_at', 100),
     ...baseOpts(workspaceId),
+    select: buildGoLiveSelect(goLiveDate, 'OperationalMap'),
     enabled: !!workspaceId && (listAll || !!activityId),
   });
 }
@@ -197,13 +210,15 @@ export function useInspections(employeeId) {
 
 export function useOperationalReports(activityId) {
   const db = useDB();
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, currentWorkspace } = useWorkspace();
+  const goLiveDate = currentWorkspace?.go_live_date;
   return useQuery({
-    queryKey: ['operationalReports', workspaceId, activityId ?? 'all'],
+    queryKey: ['operationalReports', workspaceId, goLiveDate || 'all', activityId ?? 'all'],
     queryFn: () => activityId
       ? db.ActivityOperationalReport.filter({ activity_id: activityId }, '-generated_at', 20)
       : db.ActivityOperationalReport.list('-generated_at', 100),
     ...baseOpts(workspaceId),
+    select: buildGoLiveSelect(goLiveDate, 'ActivityOperationalReport'),
     enabled: !!workspaceId,
   });
 }
@@ -231,13 +246,15 @@ function normalizeOperationalLogFilters(filters = {}) {
 
 export function useOperationalLogs(filters = {}) {
   const db = useDB();
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, currentWorkspace } = useWorkspace();
+  const goLiveDate = currentWorkspace?.go_live_date;
   const normalizedFilters = normalizeOperationalLogFilters(filters);
 
   return useQuery({
-    queryKey: ['operationalLogs', workspaceId, normalizedFilters],
+    queryKey: ['operationalLogs', workspaceId, goLiveDate || 'all', normalizedFilters],
     queryFn: () => operationalLogService.list(db, normalizedFilters),
     ...baseOpts(workspaceId),
+    select: buildGoLiveSelect(goLiveDate, 'OperationalLog'),
     enabled: !!workspaceId,
   });
 }

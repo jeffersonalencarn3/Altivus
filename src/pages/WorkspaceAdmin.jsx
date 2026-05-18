@@ -6,11 +6,12 @@
  *  - Convite com token único → link /join/:token
  *  - Roles: workspace_admin | supervisor | operacional | visualizador
  */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { useWorkspace } from '@/lib/useWorkspace';
+import { useWorkspaceEntities } from '@/lib/useWorkspaceEntities';
 import { usePermissions } from '@/lib/usePermissions';
 import PageHeader from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -18,11 +19,12 @@ import { Input } from '@/components/ui/input';
 import {
   Users, Mail, CheckCircle2, Clock, XCircle, Lock,
   Send, UserPlus, Loader2, Shield, Eye, Wrench, Crown,
-  UserX, RefreshCw,
+  UserX, RefreshCw, Rocket, DatabaseZap, AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { goLiveService, GO_LIVE_CONFIRMATION_PHRASE } from '@/services/goLiveService';
 
 // ── Configurações de roles ────────────────────────────────────────────────
 const ROLE_OPTS = [
@@ -63,7 +65,8 @@ function RoleBadge({ role, small }) {
 // ── Componente principal ──────────────────────────────────────────────────
 export default function WorkspaceAdmin() {
   const { user } = useAuth();
-  const { workspaceId, currentWorkspace } = useWorkspace();
+  const { workspaceId, currentWorkspace, refreshMemberships } = useWorkspace();
+  const db = useWorkspaceEntities();
   const qc = useQueryClient();
   const { canManageWorkspace } = usePermissions();
 
@@ -72,6 +75,14 @@ export default function WorkspaceAdmin() {
   const [invSent, setInvSent]     = useState(false);
   const [invLink, setInvLink]     = useState('');
   const [invForm, setInvForm]     = useState({ name: '', email: '', role: 'operacional', role_title: '', message: '' });
+  const [goLiveDate, setGoLiveDate] = useState('');
+  const [showReset, setShowReset] = useState(false);
+  const [resetAcknowledged, setResetAcknowledged] = useState(false);
+  const [resetPhrase, setResetPhrase] = useState('');
+
+  useEffect(() => {
+    setGoLiveDate(currentWorkspace?.go_live_date || '');
+  }, [currentWorkspace?.go_live_date]);
 
   // Verifica permissão
   const canManage = canManageWorkspace;
@@ -200,6 +211,36 @@ export default function WorkspaceAdmin() {
     onError:   () => toast.error('Erro ao reenviar'),
   });
 
+  const saveGoLiveDate = useMutation({
+    mutationFn: () => base44.entities.Workspace.update(workspaceId, { go_live_date: goLiveDate }),
+    onSuccess: async () => {
+      await refreshMemberships();
+      toast.success('Data de GO-LIVE atualizada.');
+    },
+    onError: () => toast.error('Erro ao salvar data de GO-LIVE.'),
+  });
+
+  const resetOperationalData = useMutation({
+    mutationFn: () => goLiveService.resetOperationalTestData(db, {
+      workspace: currentWorkspace,
+      user,
+      goLiveDate,
+      confirmed: resetAcknowledged,
+      confirmationPhrase: resetPhrase,
+      updateWorkspace: (id, payload) => base44.entities.Workspace.update(id, payload),
+    }),
+    onSuccess: async (result) => {
+      const total = Object.values(result.affected_records || {}).reduce((sum, value) => sum + Number(value || 0), 0);
+      await refreshMemberships();
+      qc.invalidateQueries();
+      setShowReset(false);
+      setResetAcknowledged(false);
+      setResetPhrase('');
+      toast.success(`Reset operacional concluído. ${total} registro(s) afetado(s).`);
+    },
+    onError: (err) => toast.error(err?.message || 'Erro ao executar reset operacional.'),
+  });
+
   if (!canManage) return (
     <div className="flex items-center justify-center h-64 rounded-2xl"
       style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.09)' }}>
@@ -245,6 +286,7 @@ export default function WorkspaceAdmin() {
           { id: 'members',     l: `👥 Membros (${activeMembers.length})` },
           { id: 'invitations', l: `✉️ Convites (${pendingInvites.length})` },
           { id: 'permissions', l: '🔐 Permissões' },
+          { id: 'go-live',     l: '🚀 GO-LIVE' },
         ].map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
@@ -415,6 +457,64 @@ export default function WorkspaceAdmin() {
         </div>
       )}
 
+      {/* ── TAB: GO-LIVE ── */}
+      {tab === 'go-live' && (
+        <div className="space-y-4">
+          <div className="rounded-2xl p-5"
+            style={{ background: 'linear-gradient(145deg,rgba(12,18,36,0.90),rgba(6,10,22,0.96))', border: '1px solid rgba(20,184,212,0.18)' }}>
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: 'rgba(20,184,212,0.12)', border: '1px solid rgba(20,184,212,0.25)' }}>
+                <Rocket className="w-5 h-5" style={{ color: '#14B8D4' }} />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-white font-bold">GO-LIVE Operacional</h3>
+                <p className="text-sm mt-1" style={{ color: '#718096' }}>
+                  Dashboards, produtividade, relatórios e timelines consideram apenas dados a partir desta data.
+                </p>
+                <div className="mt-4 flex flex-col sm:flex-row gap-2 sm:items-end">
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: '#A0AEC0' }}>
+                      Data de GO-LIVE
+                    </label>
+                    <Input type="date" value={goLiveDate} onChange={e => setGoLiveDate(e.target.value)} className="w-48" />
+                  </div>
+                  <Button onClick={() => saveGoLiveDate.mutate()} disabled={!goLiveDate || saveGoLiveDate.isPending}>
+                    {saveGoLiveDate.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salvar GO-LIVE'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl p-5"
+            style={{ background: 'rgba(232,125,0,0.06)', border: '1px solid rgba(232,125,0,0.22)' }}>
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ background: 'rgba(232,125,0,0.12)', border: '1px solid rgba(232,125,0,0.25)' }}>
+                  <DatabaseZap className="w-5 h-5" style={{ color: '#E87D00' }} />
+                </div>
+                <div>
+                  <h3 className="text-white font-bold">Limpar Dados Operacionais de Teste</h3>
+                  <p className="text-sm mt-1" style={{ color: '#A0AEC0' }}>
+                    Arquiva registros anteriores ao GO-LIVE sem apagar colaboradores, equipes, blocos, contratos, usuários ou configurações.
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setShowReset(true)}
+                disabled={!goLiveDate}
+                style={{ color: '#E87D00', borderColor: 'rgba(232,125,0,0.35)' }}
+              >
+                Limpar Dados Operacionais de Teste
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── MODAL: CONVIDAR MEMBRO ── */}
       {showInvite && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4"
@@ -521,6 +621,75 @@ export default function WorkspaceAdmin() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {showReset && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}>
+          <div className="w-full max-w-lg rounded-2xl p-6"
+            style={{ background: 'linear-gradient(145deg,rgba(10,18,36,0.98),rgba(6,10,22,0.99))', border: '1px solid rgba(232,125,0,0.28)', boxShadow: '0 20px 60px rgba(0,0,0,0.8)' }}>
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 mt-0.5 shrink-0" style={{ color: '#E87D00' }} />
+              <div>
+                <h3 className="text-white font-bold">Confirmar reset operacional</h3>
+                <p className="text-sm mt-1" style={{ color: '#A0AEC0' }}>
+                  Nenhum dado estrutural será apagado. Registros anteriores a {goLiveDate || '—'} serão marcados como teste/arquivados e deixarão de alimentar métricas.
+                </p>
+              </div>
+            </div>
+
+            <label className="flex items-start gap-2 mt-5 text-sm" style={{ color: '#A0AEC0' }}>
+              <input
+                type="checkbox"
+                checked={resetAcknowledged}
+                onChange={e => setResetAcknowledged(e.target.checked)}
+                className="mt-1"
+              />
+              Confirmo que revisei a data de GO-LIVE e desejo arquivar os dados operacionais anteriores.
+            </label>
+
+            <div className="mt-4">
+              <label className="block text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: '#A0AEC0' }}>
+                Digite para confirmar
+              </label>
+              <Input
+                value={resetPhrase}
+                onChange={e => setResetPhrase(e.target.value)}
+                placeholder={GO_LIVE_CONFIRMATION_PHRASE}
+              />
+            </div>
+
+            <div className="flex gap-2 mt-5">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  if (!resetOperationalData.isPending) {
+                    setShowReset(false);
+                    setResetAcknowledged(false);
+                    setResetPhrase('');
+                  }
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={() => resetOperationalData.mutate()}
+                disabled={
+                  !resetAcknowledged ||
+                  resetPhrase !== GO_LIVE_CONFIRMATION_PHRASE ||
+                  resetOperationalData.isPending
+                }
+                style={{ background: 'linear-gradient(135deg,#E87D00,#DC3737)', color: '#fff', fontWeight: 700 }}
+              >
+                {resetOperationalData.isPending
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Processando...</>
+                  : 'Executar reset'}
+              </Button>
+            </div>
           </div>
         </div>
       )}

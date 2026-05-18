@@ -9,6 +9,7 @@ import { CheckCircle2, XCircle, Lock, Clock, ChevronDown, ChevronUp } from 'luci
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAppointmentServiceMutations } from '@/hooks/services/useAppointmentServiceMutations';
+import { buildGoLiveSelect } from '@/lib/goLive';
 
 const APPROVAL_CFG = {
   pending:  { label: 'Pendente',  color: '#E87D00', bg: 'rgba(232,125,0,0.10)',  icon: Clock },
@@ -18,14 +19,20 @@ const APPROVAL_CFG = {
 
 export default function AppointmentApproval() {
   const db = useWorkspaceEntities();
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, currentWorkspace } = useWorkspace();
+  const goLiveDate = currentWorkspace?.go_live_date;
   const { user } = useAuth();
   const { canApproveReport } = usePermissions();
   const { approveAppointment } = useAppointmentServiceMutations({ user });
   const [expanded, setExpanded] = useState(null);
   const [notes, setNotes] = useState({});
 
-  const { data: appts = [], isLoading } = useQuery({ queryKey: ['appointments', workspaceId], queryFn: () => db.Appointment.list('-date', 100), enabled: !!workspaceId });
+  const { data: appts = [], isLoading } = useQuery({
+    queryKey: ['appointments', workspaceId, goLiveDate || 'all'],
+    queryFn: () => db.Appointment.list('-date', 100),
+    enabled: !!workspaceId,
+    select: buildGoLiveSelect(goLiveDate, 'Appointment'),
+  });
 
   const relevant = appts.filter(a => a.status === 'awaiting_approval' || a.approval_status === 'approved' || a.approval_status === 'rejected');
 

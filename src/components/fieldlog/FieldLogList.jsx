@@ -7,6 +7,7 @@ import { Edit2, Trash2, Lock, CheckCircle2, Clock, AlertTriangle, CloudRain, Sun
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useFieldLogServiceMutations } from '@/hooks/services/useFieldLogServiceMutations';
+import { buildGoLiveSelect } from '@/lib/goLive';
 
 const STATUS_CONFIG = {
   draft:    { label: 'Rascunho',  color: '#718096', bg: 'rgba(113,128,150,0.12)', border: 'rgba(113,128,150,0.25)' },
@@ -27,14 +28,16 @@ const WEATHER_LABEL = { sunny: 'Ensolarado', cloudy: 'Nublado', windy: 'Ventoso'
 
 export default function FieldLogList({ onEdit, onNew }) {
   const db = useWorkspaceEntities();
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, currentWorkspace } = useWorkspace();
+  const goLiveDate = currentWorkspace?.go_live_date;
   const { deleteFieldLog } = useFieldLogServiceMutations();
   const [filter, setFilter] = useState('all');
 
   const { data: logs = [], isLoading } = useQuery({
-    queryKey: ['fieldlogs', workspaceId],
+    queryKey: ['fieldlogs', workspaceId, goLiveDate || 'all'],
     queryFn: () => db.FieldLog.list('-date', 50),
     enabled: !!workspaceId,
+    select: buildGoLiveSelect(goLiveDate, 'FieldLog'),
   });
 
   const { data: contracts = [] } = useQuery({

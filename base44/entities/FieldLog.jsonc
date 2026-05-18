@@ -233,6 +233,14 @@
       "type": "boolean",
       "default": false,
       "description": "Se o estoque j\u00e1 foi dado baixa"
+    },
+    "is_test": {
+      "type": "boolean",
+      "default": false
+    },
+    "archived": {
+      "type": "boolean",
+      "default": false
     }
   },
   "required": [

@@ -143,6 +143,14 @@
     "after": {
       "type": "object",
       "description": "Snapshot parcial depois da mudanca"
+    },
+    "is_test": {
+      "type": "boolean",
+      "default": false
+    },
+    "archived": {
+      "type": "boolean",
+      "default": false
     }
   },
   "required": [
